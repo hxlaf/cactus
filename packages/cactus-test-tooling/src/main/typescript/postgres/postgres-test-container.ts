@@ -20,78 +20,70 @@ import { DefaultSerializer } from "v8";
 import { DEFAULTS } from "ts-node";
 
 /*
- * Contains options for Iroha container
+ * Contains options for Postgres container
  */
-export interface IIrohaTestLedgerConstructorOptions {
+export interface IPostgresTestContainerConstructorOptions {
   containerImageVersion?: string;
   containerImageName?: string;
-  rpcDebuggerPort?: number;
-  rpcTorriPort?: number;
-  rpcTLSPort?: number;
+  postgresPort?: number;
   envVars?: string[];
   logLevel?: LogLevelDesc;
 }
 
 /*
- * Provides default options for Iroha container
+ * Provides default options for Postgres container
  */
-export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
+export const POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS = Object.freeze({
   containerImageVersion: "2021-06-11-7a055c3",
-  containerImageName: "hyperledger/iroha:1.2.0",
-  rpcTorriPort: 50051,
+  containerImageName: "postgres:9.5-alpine",
+  postgresPort: 5432,
   envVars: ["IROHA_NETWORK=dev"],
 });
 
 /*
- * Provides validations for Iroha container's options
+ * Provides validations for Postgres container's options
  */
-export const IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA: Joi.Schema = Joi.object().keys(
+export const POSTGRES_TEST_CONTAINER_OPTIONS_JOI_SCHEMA: Joi.Schema = Joi.object().keys(
   {
     containerImageVersion: Joi.string().min(5).required(),
     containerImageName: Joi.string().min(1).required(),
-    rpcTorriPort: Joi.number().min(1024).max(65535).required(),
+    postgresPort: Joi.number().min(1024).max(65535).required(),
     envVars: Joi.array().allow(null).required(),
   },
 );
 
-export class IrohaTestLedger implements ITestLedger {
+export class PostgresTestContainer implements ITestLedger {
   public readonly containerImageVersion: string;
   public readonly containerImageName: string;
-  public readonly rpcDebuggerPort: number;
-  public readonly rpcTorriPort: number;
-  public readonly rpcTLSPort: number;
+  public readonly postgresPort: number;
   public readonly envVars: string[];
 
   private readonly log: Logger;
   private container: Container | undefined;
   private containerId: string | undefined;
 
-  constructor(public readonly options: IIrohaTestLedgerConstructorOptions = {}) {
+  constructor(public readonly options: IPostgresTestContainerConstructorOptions = {}) {
     if (!options) {
-      throw new TypeError(`IrohaTestLedger#ctor options was falsy.`);
+      throw new TypeError(`PostgresTestContainer#ctor options was falsy.`);
     }
     this.containerImageVersion =
       options.containerImageVersion ||
-      IROHA_TEST_LEDGER_DEFAULT_OPTIONS.containerImageVersion;
+      POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.containerImageVersion;
     this.containerImageName =
       options.containerImageName ||
-      IROHA_TEST_LEDGER_DEFAULT_OPTIONS.containerImageName;
-    this.rpcDebuggerPort =
-      options.rpcDebuggerPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcDebuggerPort;
-    this.rpcTorriPort = 
-      options.rpcTorriPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcTorriPort;
-    this.rpcTLSPort =
-      options.rpcTLSPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcTLSPort;
-    this.envVars = options.envVars || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.envVars;
+      POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.containerImageName;
+    this.postgresPort =
+      options.postgresPort || POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.postgresPort;
+    this.envVars = options.envVars || POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.envVars;
 
     this.validateConstructorOptions();
-    const label = "iroha-test-ledger";
+    const label = "postgres-test-container";
     const level = options.logLevel || "INFO";
     this.log = LoggerProvider.getOrCreate({ level, label });
   }
 
   public getContainer(): Container {
-    const fnTag = "IrohaTestLedger#getContainer()";
+    const fnTag = "PostgresTestContainer#getContainer()";
     if (!this.container) {
       throw new Error(`${fnTag} container not yet started by this instance.`);
     } else {
@@ -102,20 +94,12 @@ export class IrohaTestLedger implements ITestLedger {
   public getContainerImageName(): string {
     return `${this.containerImageName}:${this.containerImageVersion}`;
   }
-
-  public async getRpcTorriPortHost(): Promise<string> {
+  
+  public async getPostgresPortHost(): Promise<string> {
     const ipAddress = "127.0.0.1";
-    const hostPort: number = await this.getRpcTorriPort();
+    const hostPort: number = await this.getPostgresPort();
     return `http://${ipAddress}:${hostPort}`;
   }
-
-  // public async getRpcApiWsHost(): Promise<string> {
-  //   const { rpcApiWsPort } = this;
-  //   const ipAddress = "127.0.0.1";
-  //   const containerInfo = await this.getContainerInfo();
-  //   const port = await Containers.getPublicPort(rpcApiWsPort, containerInfo);
-  //   return `ws://${ipAddress}:${port}`;
-  // }
 
   public async getFileContents(filePath: string): Promise<string> {
     const response: any = await this.getContainer().getArchive({
@@ -163,10 +147,7 @@ export class IrohaTestLedger implements ITestLedger {
         [],
         {
           ExposedPorts: {
-            [`${this.rpcDebuggerPort}/tcp`]: {}, // Iroha RPC - Debugger              
-            [`${this.rpcTorriPort}/tcp`]: {}, // Iroha RPC - Torii
-            [`${this.rpcTLSPort}/tcp`]: {}, // Iroha RPC - TLS
-            "5432/tcp": {}, // postgres Port - HTTP
+            [`${this.postgresPort}/tcp`]: {}, // postgres Port - HTTP             
           },
           // TODO: this can be removed once the new docker image is published and
           // specified as the default one to be used by the tests.
@@ -210,7 +191,7 @@ export class IrohaTestLedger implements ITestLedger {
   }
 
   public async waitForHealthCheck(timeoutMs = 180000): Promise<void> {
-    const fnTag = "IrohaTestLedger#waitForHealthCheck()";
+    const fnTag = "PostgresTestContainer#waitForHealthCheck()";
     // const httpUrl = await this.getRpcApiHttpHost();
     const startedAt = Date.now();
     let isHealthy = false;
@@ -229,7 +210,7 @@ export class IrohaTestLedger implements ITestLedger {
   }
 
   public stop(): Promise<any> {
-    const fnTag = "IrohaTestLedger#stop()";
+    const fnTag = "PostgresTestContainer#stop()";
     return new Promise((resolve, reject) => {
       if (this.container) {
         this.container.stop({}, (err: any, result: any) => {
@@ -247,7 +228,7 @@ export class IrohaTestLedger implements ITestLedger {
   }
 
   public destroy(): Promise<any> {
-    const fnTag = "IrohaTestLedger#destroy()";
+    const fnTag = "PostgresTestContainer#destroy()";
     if (this.container) {
       return this.container.remove();
     } else {
@@ -269,60 +250,14 @@ export class IrohaTestLedger implements ITestLedger {
     if (aContainerInfo) {
       return aContainerInfo;
     } else {
-      throw new Error(`IrohaTestLedger#getContainerInfo() no image "${image}"`);
+      throw new Error(`PostgresTestContainer#getContainerInfo() no image "${image}"`);
     }
   }
 
-  public async getRpcDebuggerPort(): Promise<number> {
-    const fnTag = "IrohaTestLedger#getRpcDebuggerPort()";
+  public async getPostgresPort(): Promise<number> {
+    const fnTag = "PostgresTestContainer#getPostgresPort()";
     const aContainerInfo = await this.getContainerInfo();
-    const { rpcDebuggerPort: thePort } = this;
-    const { Ports: ports } = aContainerInfo;
-
-    if (ports.length < 1) {
-      throw new Error(`${fnTag} no ports exposed or mapped at all`);
-    }
-    const mapping = ports.find((x) => x.PrivatePort === thePort);
-    if (mapping) {
-      if (!mapping.PublicPort) {
-        throw new Error(`${fnTag} port ${thePort} mapped but not public`);
-      } else if (mapping.IP !== "0.0.0.0") {
-        throw new Error(`${fnTag} port ${thePort} mapped to localhost`);
-      } else {
-        return mapping.PublicPort;
-      }
-    } else {
-      throw new Error(`${fnTag} no mapping found for ${thePort}`);
-    }
-  }
-
-  public async getRpcTorriPort(): Promise<number> {
-    const fnTag = "IrohaTestLedger#getRpcTorriPort()";
-    const aContainerInfo = await this.getContainerInfo();
-    const { rpcTorriPort: thePort } = this;
-    const { Ports: ports } = aContainerInfo;
-
-    if (ports.length < 1) {
-      throw new Error(`${fnTag} no ports exposed or mapped at all`);
-    }
-    const mapping = ports.find((x) => x.PrivatePort === thePort);
-    if (mapping) {
-      if (!mapping.PublicPort) {
-        throw new Error(`${fnTag} port ${thePort} mapped but not public`);
-      } else if (mapping.IP !== "0.0.0.0") {
-        throw new Error(`${fnTag} port ${thePort} mapped to localhost`);
-      } else {
-        return mapping.PublicPort;
-      }
-    } else {
-      throw new Error(`${fnTag} no mapping found for ${thePort}`);
-    }
-  }
-
-  public async getRpcTLSPort(): Promise<number> {
-    const fnTag = "IrohaTestLedger#getRpcTLSPort()";
-    const aContainerInfo = await this.getContainerInfo();
-    const { rpcTLSPort: thePort } = this;
+    const { postgresPort: thePort } = this;
     const { Ports: ports } = aContainerInfo;
 
     if (ports.length < 1) {
@@ -343,7 +278,7 @@ export class IrohaTestLedger implements ITestLedger {
   }
 
   public async getContainerIpAddress(): Promise<string> {
-    const fnTag = "IrohaTestLedger#getContainerIpAddress()";
+    const fnTag = "PostgresTestContainer#getContainerIpAddress()";
     const aContainerInfo = await this.getContainerInfo();
 
     if (aContainerInfo) {
@@ -384,21 +319,19 @@ export class IrohaTestLedger implements ITestLedger {
   }
 
   private validateConstructorOptions(): void {
-    const validationResult = Joi.validate<IIrohaTestLedgerConstructorOptions>(
+    const validationResult = Joi.validate<IPostgresTestContainerConstructorOptions>(
       {
         containerImageVersion: this.containerImageVersion,
         containerImageName: this.containerImageName,
-        rpcDebuggerPort: this.rpcDebuggerPort,
-        rpcTorriPort: this.rpcTorriPort,
-        rpcTLSPort: this.rpcTLSPort,
+        postgresPort: this.postgresPort,
         envVars: this.envVars,
       },
-      IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA,
+      POSTGRES_TEST_CONTAINER_OPTIONS_JOI_SCHEMA,
     );
 
     if (validationResult.error) {
       throw new Error(
-        `IrohaTestLedger#ctor ${validationResult.error.annotate()}`,
+        `PostgresTestContainer#ctor ${validationResult.error.annotate()}`,
       );
     }
   }
