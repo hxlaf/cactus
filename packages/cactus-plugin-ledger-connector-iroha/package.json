@@ -1,5 +1,5 @@
 {
-  "name": "@hyperledger/cactus-plugin-ledger-connector-besu",
+  "name": "@hyperledger/cactus-plugin-ledger-connector-iroha",
   "version": "0.5.0",
   "description": "Allows Cactus nodes to connect to a Besu ledger.",
   "main": "dist/lib/main/typescript/index.js",
