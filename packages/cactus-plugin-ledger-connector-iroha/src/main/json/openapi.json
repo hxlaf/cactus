@@ -44,7 +44,7 @@
                         "nullable": false
                     },
                     "transactionConfig": {
-                        "$ref": "#/components/schemas/BesuTransactionConfig",
+                        "$ref": "#/components/schemas/IrohaTransactionConfig",
                         "nullable": false
                     },
                     "consistencyStrategy": {
@@ -176,16 +176,16 @@
         }
     },
     "paths": {
-        "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-besu/run-transaction": {
+        "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-iroha/run-transaction": {
             "post": {
                 "x-hyperledger-cactus": {
                     "http": {
                         "verbLowerCase": "post",
-                        "path": "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-besu/run-transaction"
+                        "path": "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-iroha/run-transaction"
                     }
                 },
                 "operationId": "runTransactionV1",
-                "summary": "Executes a transaction on a besu ledger",
+                "summary": "Executes a transaction on a Iroha ledger",
                 "parameters": [],
                 "requestBody": {
                     "content": {
@@ -210,16 +210,16 @@
                 }
             }
         },
-        "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-besu/invoke-contract": {
+        "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-iroha/invoke-contract": {
             "post": {
                 "x-hyperledger-cactus": {
                     "http": {
                         "verbLowerCase": "post",
-                        "path": "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-besu/invoke-contract"
+                        "path": "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-iroha/invoke-contract"
                     }
                 },
                 "operationId": "invokeContractV1",
-                "summary": "Invokes a contract on a besu ledger",
+                "summary": "Invokes a contract on a Iroha ledger",
                 "parameters": [],
                 "requestBody": {
                     "content": {
@@ -240,7 +240,25 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    "501": {
+                        "description": "Not implemented",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "nullable": false,
+                                            "minLength": 1,
+                                            "maxLength": 2048
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }                    
                 }
             }
         }
