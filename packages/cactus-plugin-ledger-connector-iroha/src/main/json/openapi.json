@@ -34,21 +34,17 @@
             "RunTransactionRequest": {
                 "type": "object",
                 "required": [
-                    "web3SigningCredential",
-                    "transactionConfig",
-                    "consistencyStrategy"
+                    "commandName", //function name /method name (string)
+                    "params" //array [any] array of anything
                 ],
                 "properties": {
-                    "web3SigningCredential": {
+                    "commandName": {
                         "$ref": "#/components/schemas/Web3SigningCredential",
                         "nullable": false
                     },
-                    "transactionConfig": {
+                    "params": {
                         "$ref": "#/components/schemas/IrohaTransactionConfig",
                         "nullable": false
-                    },
-                    "consistencyStrategy": {
-                        "$ref": "#/components/schemas/ConsistencyStrategy"
                     }
                 }
             },
@@ -231,16 +227,6 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/InvokeContractV1Response"
-                                }
-                            }
-                        }
-                    },
                     "501": {
                         "description": "Not implemented",
                         "content": {
