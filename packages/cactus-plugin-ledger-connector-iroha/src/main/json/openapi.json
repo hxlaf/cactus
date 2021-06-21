@@ -34,8 +34,8 @@
             "RunTransactionRequest": {
                 "type": "object",
                 "required": [
-                    "commandName", //function name /method name (string)
-                    "params" //array [any] array of anything
+                    "commandName", 
+                    "params" 
                 ],
                 "properties": {
                     "commandName": {
