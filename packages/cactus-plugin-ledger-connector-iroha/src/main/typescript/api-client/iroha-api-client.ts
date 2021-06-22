@@ -11,24 +11,24 @@ import {
 } from "../generated/openapi/typescript-axios";
 import { Configuration } from "../generated/openapi/typescript-axios/configuration";
 
-export class BesuApiClientOptions extends Configuration {
+export class IrohaApiClientOptions extends Configuration {
   readonly logLevel?: LogLevelDesc;
   readonly wsApiHost?: string;
   readonly wsApiPath?: string;
 }
 
-export class BesuApiClient extends DefaultApi {
-  public static readonly CLASS_NAME = "BesuApiClient";
+export class IrohaApiClient extends DefaultApi {
+  public static readonly CLASS_NAME = "IrohaApiClient";
 
   private readonly log: Logger;
   private readonly wsApiHost: string;
   private readonly wsApiPath: string;
 
   public get className(): string {
-    return BesuApiClient.CLASS_NAME;
+    return IrohaApiClient.CLASS_NAME;
   }
 
-  constructor(public readonly options: BesuApiClientOptions) {
+  constructor(public readonly options: IrohaApiClientOptions) {
     super(options);
     const fnTag = `${this.className}#constructor()`;
     Checks.truthy(options, `${fnTag} arg options`);

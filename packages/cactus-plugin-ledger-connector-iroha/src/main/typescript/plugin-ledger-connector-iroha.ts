@@ -57,14 +57,13 @@ import {
 } from "./generated/openapi/typescript-axios/";
 
 import { RunTransactionEndpoint } from "./web-services/run-transaction-endpoint";
-import { InvokeContractEndpoint } from "./web-services/invoke-contract-endpoint";
 import { isWeb3SigningCredentialNone } from "./model-type-guards";
 import { BesuSignTransactionEndpointV1 } from "./web-services/sign-transaction-endpoint-v1";
 import { PrometheusExporter } from "./prometheus-exporter/prometheus-exporter";
-import {
-  GetPrometheusExporterMetricsEndpointV1,
-  IGetPrometheusExporterMetricsEndpointV1Options,
-} from "./web-services/get-prometheus-exporter-metrics-endpoint-v1";
+// import {
+//   GetPrometheusExporterMetricsEndpointV1,
+//   IGetPrometheusExporterMetricsEndpointV1Options,
+// } from "./web-services/get-prometheus-exporter-metrics-endpoint-v1";
 import { WatchBlocksV1Endpoint } from "./web-services/watch-blocks-v1-endpoint";
 
 export const E_KEYCHAIN_NOT_FOUND = "cactus.connector.besu.keychain_not_found";
@@ -78,7 +77,7 @@ export interface IPluginLedgerConnectorIrohaOptions
   logLevel?: LogLevelDesc;
 }
 
-export class PluginLedgerConnectorBesu
+export class PluginLedgerConnectorIroha
   implements
     IPluginLedgerConnector<
       DeployContractSolidityBytecodeV1Request,
@@ -100,10 +99,10 @@ export class PluginLedgerConnectorBesu
   private endpoints: IWebServiceEndpoint[] | undefined;
   private httpServer: Server | SecureServer | null = null;
 
-  public static readonly CLASS_NAME = "PluginLedgerConnectorBesu";
+  public static readonly CLASS_NAME = "PluginLedgerConnectorIroha";
 
   public get className(): string {
-    return PluginLedgerConnectorBesu.CLASS_NAME;
+    return PluginLedgerConnectorIroha.CLASS_NAME;
   }
 
   constructor(public readonly options: IPluginLedgerConnectorIrohaOptions) {

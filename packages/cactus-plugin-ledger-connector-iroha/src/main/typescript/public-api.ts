@@ -1,7 +1,7 @@
 export {
   E_KEYCHAIN_NOT_FOUND,
-  IPluginLedgerConnectorBesuOptions,
-  PluginLedgerConnectorBesu,
+  IPluginLedgerConnectorIrohaOptions,
+  PluginLedgerConnectorIroha,
 } from "./plugin-ledger-connector-iroha";
 export { PluginFactoryLedgerConnector } from "./plugin-factory-ledger-connector";
 
@@ -9,9 +9,9 @@ import { IPluginFactoryOptions } from "@hyperledger/cactus-core-api";
 import { PluginFactoryLedgerConnector } from "./plugin-factory-ledger-connector";
 
 export {
-  BesuApiClient,
-  BesuApiClientOptions,
-} from "./api-client/besu-api-client";
+  IrohaApiClient,
+  IrohaApiClientOptions,
+} from "./api-client/iroha-api-client";
 
 export * from "./generated/openapi/typescript-axios/api";
 

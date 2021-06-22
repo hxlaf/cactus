@@ -32,7 +32,7 @@ import {
 } from "../../../../main/typescript/public-api";
 
 
-import { IPluginLedgerConnectorFabricOptions } from "../../../../main/typescript/plugin-ledger-connector-iroha";
+import { IPluginLedgerConnectorIrohaOptions } from "../../../../main/typescript/plugin-ledger-connector-iroha";
 import { DiscoveryOptions } from "fabric-network";
 import { Configuration } from "@hyperledger/cactus-core-api";
 
@@ -63,8 +63,8 @@ test(testCase, async (t: Test) => {
     emitContainerLogs: true,
     publishAllPorts: true,
     logLevel,
-    imageName: "hyperledger/cactus-fabric2-all-in-one",
-    imageVersion: "2021-04-20-nodejs",
+    imageName: "hyperledger/iroha:1.2.0",
+    imageVersion: "2021-01-01",
     envVars: new Map([
       ["IROHA_VERSION", "1.2.0"],
       ["CA_VERSION", "1.4.9"],
