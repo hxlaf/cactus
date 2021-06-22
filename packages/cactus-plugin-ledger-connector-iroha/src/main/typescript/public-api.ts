@@ -2,7 +2,7 @@ export {
   E_KEYCHAIN_NOT_FOUND,
   IPluginLedgerConnectorBesuOptions,
   PluginLedgerConnectorBesu,
-} from "./plugin-ledger-connector-besu";
+} from "./plugin-ledger-connector-iroha";
 export { PluginFactoryLedgerConnector } from "./plugin-factory-ledger-connector";
 
 import { IPluginFactoryOptions } from "@hyperledger/cactus-core-api";

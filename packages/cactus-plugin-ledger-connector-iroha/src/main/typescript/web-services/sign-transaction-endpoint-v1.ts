@@ -18,7 +18,7 @@ import {
 
 import { SignTransactionRequest } from "../generated/openapi/typescript-axios/api";
 
-import { PluginLedgerConnectorBesu } from "../plugin-ledger-connector-besu";
+import { PluginLedgerConnectorBesu } from "../plugin-ledger-connector-iroha";
 import OAS from "../../json/openapi.json";
 
 export interface IBesuSignTransactionEndpointOptions {

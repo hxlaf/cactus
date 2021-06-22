@@ -6,7 +6,7 @@ import {
   LogLevelDesc,
   LoggerProvider,
   IAsyncProvider,
-} from "@hyperledger/cactus-common";
+} from "hyperledger/cactus-common";
 import {
   IEndpointAuthzOptions,
   IExpressRequestHandler,
@@ -14,7 +14,7 @@ import {
 } from "@hyperledger/cactus-core-api";
 import { registerWebServiceEndpoint } from "@hyperledger/cactus-core";
 
-import { PluginLedgerConnectorBesu } from "../plugin-ledger-connector-besu";
+import { PluginLedgerConnectorBesu } from "../plugin-ledger-connector-iroha";
 
 import OAS from "../../json/openapi.json";
 
@@ -44,7 +44,7 @@ export class RunTransactionEndpoint implements IWebServiceEndpoint {
 
   public getOasPath() {
     return OAS.paths[
-      "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-besu/run-transaction"
+      "/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-iroha/run-transaction"
     ];
   }
 
