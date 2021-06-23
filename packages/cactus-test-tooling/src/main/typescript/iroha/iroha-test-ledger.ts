@@ -25,7 +25,7 @@ import { DEFAULTS } from "ts-node";
 export interface IIrohaTestLedgerConstructorOptions {
   containerImageVersion?: string;
   containerImageName?: string;
-  rpcTorriPort?: number;
+  rpcToriiPort?: number;
   envVars?: string[];
   logLevel?: LogLevelDesc;
 }
@@ -36,7 +36,7 @@ export interface IIrohaTestLedgerConstructorOptions {
 export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
   containerImageVersion: "2021-06-11-7a055c3",
   containerImageName: "hyperledger/iroha:1.2.0",
-  rpcTorriPort: 50051,
+  rpcToriiPort: 50051,
   envVars: ["IROHA_NETWORK=dev"],
 });
 
@@ -47,7 +47,7 @@ export const IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA: Joi.Schema = Joi.object().key
   {
     containerImageVersion: Joi.string().min(5).required(),
     containerImageName: Joi.string().min(1).required(),
-    rpcTorriPort: Joi.number().min(1024).max(65535).required(),
+    rpcToriiPort: Joi.number().min(1024).max(65535).required(),
     envVars: Joi.array().allow(null).required(),
   },
 );
@@ -55,7 +55,7 @@ export const IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA: Joi.Schema = Joi.object().key
 export class IrohaTestLedger implements ITestLedger {
   public readonly containerImageVersion: string;
   public readonly containerImageName: string;
-  public readonly rpcTorriPort: number;
+  public readonly rpcToriiPort: number;
   public readonly envVars: string[];
 
   private readonly log: Logger;
@@ -72,8 +72,8 @@ export class IrohaTestLedger implements ITestLedger {
     this.containerImageName =
       options.containerImageName ||
       IROHA_TEST_LEDGER_DEFAULT_OPTIONS.containerImageName;
-    this.rpcTorriPort = 
-      options.rpcTorriPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcTorriPort;
+    this.rpcToriiPort = 
+      options.rpcToriiPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcToriiPort;
     this.envVars = options.envVars || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.envVars;
 
     this.validateConstructorOptions();
@@ -95,9 +95,9 @@ export class IrohaTestLedger implements ITestLedger {
     return `${this.containerImageName}:${this.containerImageVersion}`;
   }
 
-  public async getRpcTorriPortHost(): Promise<string> {
+  public async getRpcToriiPortHost(): Promise<string> {
     const ipAddress = "127.0.0.1";
-    const hostPort: number = await this.getRpcTorriPort();
+    const hostPort: number = await this.getRpcToriiPort();
     return `http://${ipAddress}:${hostPort}`;
   }
 
@@ -155,7 +155,7 @@ export class IrohaTestLedger implements ITestLedger {
         [],
         {
           ExposedPorts: {            
-            [`${this.rpcTorriPort}/tcp`]: {}, // Iroha RPC - Torii
+            [`${this.rpcToriiPort}/tcp`]: {}, // Iroha RPC - Torii
           },
           // TODO: this can be removed once the new docker image is published and
           // specified as the default one to be used by the tests.
@@ -262,10 +262,10 @@ export class IrohaTestLedger implements ITestLedger {
     }
   }
 
-  public async getRpcTorriPort(): Promise<number> {
-    const fnTag = "IrohaTestLedger#getRpcTorriPort()";
+  public async getRpcToriiPort(): Promise<number> {
+    const fnTag = "IrohaTestLedger#getRpcToriiPort()";
     const aContainerInfo = await this.getContainerInfo();
-    const { rpcTorriPort: thePort } = this;
+    const { rpcToriiPort: thePort } = this;
     const { Ports: ports } = aContainerInfo;
 
     if (ports.length < 1) {
@@ -284,7 +284,7 @@ export class IrohaTestLedger implements ITestLedger {
       throw new Error(`${fnTag} no mapping found for ${thePort}`);
     }
   }
-  
+
   public async getContainerIpAddress(): Promise<string> {
     const fnTag = "IrohaTestLedger#getContainerIpAddress()";
     const aContainerInfo = await this.getContainerInfo();
@@ -331,7 +331,7 @@ export class IrohaTestLedger implements ITestLedger {
       {
         containerImageVersion: this.containerImageVersion,
         containerImageName: this.containerImageName,
-        rpcTorriPort: this.rpcTorriPort,
+        rpcToriiPort: this.rpcToriiPort,
         envVars: this.envVars,
       },
       IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA,
