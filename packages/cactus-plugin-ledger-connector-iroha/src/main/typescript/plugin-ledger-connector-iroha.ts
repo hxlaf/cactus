@@ -70,25 +70,22 @@ export const E_KEYCHAIN_NOT_FOUND = "cactus.connector.besu.keychain_not_found";
 
 export interface IPluginLedgerConnectorIrohaOptions
   extends ICactusPluginOptions {
-  rpcApiHttpHost: string;
-  rpcApiWsHost: string;
+  rpcTorriPort: string;
   pluginRegistry: PluginRegistry;
-  prometheusExporter?: PrometheusExporter;
+  //prometheusExporter?: PrometheusExporter;
   logLevel?: LogLevelDesc;
 }
 
 export class PluginLedgerConnectorIroha
   implements
     IPluginLedgerConnector<
-      DeployContractSolidityBytecodeV1Request,
-      DeployContractSolidityBytecodeV1Response,
       RunTransactionRequest,
       RunTransactionResponse
     >,
     ICactusPlugin,
     IPluginWebService {
   private readonly instanceId: string;
-  public prometheusExporter: PrometheusExporter;
+  //public prometheusExporter: PrometheusExporter;
   private readonly log: Logger;
   private readonly web3: Web3;
   private readonly pluginRegistry: PluginRegistry;
@@ -108,8 +105,7 @@ export class PluginLedgerConnectorIroha
   constructor(public readonly options: IPluginLedgerConnectorIrohaOptions) {
     const fnTag = `${this.className}#constructor()`;
     Checks.truthy(options, `${fnTag} arg options`);
-    Checks.truthy(options.rpcApiHttpHost, `${fnTag} options.rpcApiHttpHost`);
-    Checks.truthy(options.rpcApiWsHost, `${fnTag} options.rpcApiWsHost`);
+    Checks.truthy(options.rpcTorriPort, `${fnTag} options.rpcTorriPort`);
     Checks.truthy(options.pluginRegistry, `${fnTag} options.pluginRegistry`);
     Checks.truthy(options.instanceId, `${fnTag} options.instanceId`);
 
@@ -117,21 +113,21 @@ export class PluginLedgerConnectorIroha
     const label = this.className;
     this.log = LoggerProvider.getOrCreate({ level, label });
 
-    const web3WsProvider = new Web3.providers.WebsocketProvider(
-      this.options.rpcApiWsHost,
-    );
-    this.web3 = new Web3(web3WsProvider);
+    // const web3WsProvider = new Web3.providers.WebsocketProvider(
+    //   this.options.rpcApiWsHost,
+    // );
+    //this.web3 = new Web3(web3WsProvider);
     this.instanceId = options.instanceId;
     this.pluginRegistry = options.pluginRegistry;
-    this.prometheusExporter =
-      options.prometheusExporter ||
-      new PrometheusExporter({ pollingIntervalInMin: 1 });
-    Checks.truthy(
-      this.prometheusExporter,
-      `${fnTag} options.prometheusExporter`,
-    );
+    // this.prometheusExporter =
+    //   options.prometheusExporter ||
+    //   new PrometheusExporter({ pollingIntervalInMin: 1 });
+    // Checks.truthy(
+    //   this.prometheusExporter,
+    //   `${fnTag} options.prometheusExporter`,
+    // );
 
-    this.prometheusExporter.startMetricsCollection();
+    //this.prometheusExporter.startMetricsCollection();
   }
 
   // public getPrometheusExporter(): PrometheusExporter {
