@@ -25,9 +25,7 @@ import { DEFAULTS } from "ts-node";
 export interface IIrohaTestLedgerConstructorOptions {
   containerImageVersion?: string;
   containerImageName?: string;
-  rpcDebuggerPort?: number;
   rpcTorriPort?: number;
-  rpcTLSPort?: number;
   envVars?: string[];
   logLevel?: LogLevelDesc;
 }
@@ -57,9 +55,7 @@ export const IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA: Joi.Schema = Joi.object().key
 export class IrohaTestLedger implements ITestLedger {
   public readonly containerImageVersion: string;
   public readonly containerImageName: string;
-  public readonly rpcDebuggerPort: number;
   public readonly rpcTorriPort: number;
-  public readonly rpcTLSPort: number;
   public readonly envVars: string[];
 
   private readonly log: Logger;
@@ -76,12 +72,8 @@ export class IrohaTestLedger implements ITestLedger {
     this.containerImageName =
       options.containerImageName ||
       IROHA_TEST_LEDGER_DEFAULT_OPTIONS.containerImageName;
-    this.rpcDebuggerPort =
-      options.rpcDebuggerPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcDebuggerPort;
     this.rpcTorriPort = 
       options.rpcTorriPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcTorriPort;
-    this.rpcTLSPort =
-      options.rpcTLSPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcTLSPort;
     this.envVars = options.envVars || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.envVars;
 
     this.validateConstructorOptions();
@@ -162,11 +154,8 @@ export class IrohaTestLedger implements ITestLedger {
         [],
         [],
         {
-          ExposedPorts: {
-            [`${this.rpcDebuggerPort}/tcp`]: {}, // Iroha RPC - Debugger              
+          ExposedPorts: {            
             [`${this.rpcTorriPort}/tcp`]: {}, // Iroha RPC - Torii
-            [`${this.rpcTLSPort}/tcp`]: {}, // Iroha RPC - TLS
-            "5432/tcp": {}, // postgres Port - HTTP
           },
           // TODO: this can be removed once the new docker image is published and
           // specified as the default one to be used by the tests.
@@ -273,29 +262,6 @@ export class IrohaTestLedger implements ITestLedger {
     }
   }
 
-  public async getRpcDebuggerPort(): Promise<number> {
-    const fnTag = "IrohaTestLedger#getRpcDebuggerPort()";
-    const aContainerInfo = await this.getContainerInfo();
-    const { rpcDebuggerPort: thePort } = this;
-    const { Ports: ports } = aContainerInfo;
-
-    if (ports.length < 1) {
-      throw new Error(`${fnTag} no ports exposed or mapped at all`);
-    }
-    const mapping = ports.find((x) => x.PrivatePort === thePort);
-    if (mapping) {
-      if (!mapping.PublicPort) {
-        throw new Error(`${fnTag} port ${thePort} mapped but not public`);
-      } else if (mapping.IP !== "0.0.0.0") {
-        throw new Error(`${fnTag} port ${thePort} mapped to localhost`);
-      } else {
-        return mapping.PublicPort;
-      }
-    } else {
-      throw new Error(`${fnTag} no mapping found for ${thePort}`);
-    }
-  }
-
   public async getRpcTorriPort(): Promise<number> {
     const fnTag = "IrohaTestLedger#getRpcTorriPort()";
     const aContainerInfo = await this.getContainerInfo();
@@ -318,30 +284,7 @@ export class IrohaTestLedger implements ITestLedger {
       throw new Error(`${fnTag} no mapping found for ${thePort}`);
     }
   }
-
-  public async getRpcTLSPort(): Promise<number> {
-    const fnTag = "IrohaTestLedger#getRpcTLSPort()";
-    const aContainerInfo = await this.getContainerInfo();
-    const { rpcTLSPort: thePort } = this;
-    const { Ports: ports } = aContainerInfo;
-
-    if (ports.length < 1) {
-      throw new Error(`${fnTag} no ports exposed or mapped at all`);
-    }
-    const mapping = ports.find((x) => x.PrivatePort === thePort);
-    if (mapping) {
-      if (!mapping.PublicPort) {
-        throw new Error(`${fnTag} port ${thePort} mapped but not public`);
-      } else if (mapping.IP !== "0.0.0.0") {
-        throw new Error(`${fnTag} port ${thePort} mapped to localhost`);
-      } else {
-        return mapping.PublicPort;
-      }
-    } else {
-      throw new Error(`${fnTag} no mapping found for ${thePort}`);
-    }
-  }
-
+  
   public async getContainerIpAddress(): Promise<string> {
     const fnTag = "IrohaTestLedger#getContainerIpAddress()";
     const aContainerInfo = await this.getContainerInfo();
@@ -388,9 +331,7 @@ export class IrohaTestLedger implements ITestLedger {
       {
         containerImageVersion: this.containerImageVersion,
         containerImageName: this.containerImageName,
-        rpcDebuggerPort: this.rpcDebuggerPort,
         rpcTorriPort: this.rpcTorriPort,
-        rpcTLSPort: this.rpcTLSPort,
         envVars: this.envVars,
       },
       IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA,

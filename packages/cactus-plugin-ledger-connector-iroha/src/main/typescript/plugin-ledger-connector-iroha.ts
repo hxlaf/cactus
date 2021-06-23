@@ -58,8 +58,8 @@ import {
 
 import { RunTransactionEndpoint } from "./web-services/run-transaction-endpoint";
 import { isWeb3SigningCredentialNone } from "./model-type-guards";
-import { BesuSignTransactionEndpointV1 } from "./web-services/sign-transaction-endpoint-v1";
-import { PrometheusExporter } from "./prometheus-exporter/prometheus-exporter";
+// import { BesuSignTransactionEndpointV1 } from "./web-services/sign-transaction-endpoint-v1";
+// import { PrometheusExporter } from "./prometheus-exporter/prometheus-exporter";
 // import {
 //   GetPrometheusExporterMetricsEndpointV1,
 //   IGetPrometheusExporterMetricsEndpointV1Options,
@@ -185,13 +185,13 @@ export class PluginLedgerConnectorIroha
     }
 
     const endpoints: IWebServiceEndpoint[] = [];
-    {
-      const endpoint = new DeployContractSolidityBytecodeEndpoint({
-        connector: this,
-        logLevel: this.options.logLevel,
-      });
-      endpoints.push(endpoint);
-    }
+    // {
+    //   const endpoint = new DeployContractSolidityBytecodeEndpoint({
+    //     connector: this,
+    //     logLevel: this.options.logLevel,
+    //   });
+    //   endpoints.push(endpoint);
+    // }
     {
       const endpoint = new RunTransactionEndpoint({
         connector: this,
@@ -200,33 +200,33 @@ export class PluginLedgerConnectorIroha
       endpoints.push(endpoint);
     }
     {
-      const endpoint = new InvokeContractEndpoint({
-        connector: this,
-        logLevel: this.options.logLevel,
-      });
-      endpoints.push(endpoint);
-    }
-    {
-      const endpoint = new BesuSignTransactionEndpointV1({
-        connector: this,
-        logLevel: this.options.logLevel,
-      });
-      endpoints.push(endpoint);
-    }
-    {
-      const opts: IGetPrometheusExporterMetricsEndpointV1Options = {
-        connector: this,
-        logLevel: this.options.logLevel,
-      };
-      const endpoint = new GetPrometheusExporterMetricsEndpointV1(opts);
-      endpoints.push(endpoint);
-    }
+    //   const endpoint = new InvokeContractEndpoint({
+    //     connector: this,
+    //     logLevel: this.options.logLevel,
+    //   });
+    //   endpoints.push(endpoint);
+    // }
+    // {
+    //   const endpoint = new BesuSignTransactionEndpointV1({
+    //     connector: this,
+    //     logLevel: this.options.logLevel,
+    //   });
+    //   endpoints.push(endpoint);
+    // }
+    // {
+    //   const opts: IGetPrometheusExporterMetricsEndpointV1Options = {
+    //     connector: this,
+    //     logLevel: this.options.logLevel,
+    //   };
+    //   const endpoint = new GetPrometheusExporterMetricsEndpointV1(opts);
+    //   endpoints.push(endpoint);
+    // }
     this.endpoints = endpoints;
     return endpoints;
   }
 
   public getPackageName(): string {
-    return `@hyperledger/cactus-plugin-ledger-connector-besu`;
+    return `@hyperledger/cactus-plugin-ledger-connector-iroha`;
   }
 
   public async getConsensusAlgorithmFamily(): Promise<

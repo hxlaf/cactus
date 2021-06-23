@@ -23,17 +23,14 @@ import {
 import { PluginKeychainMemory } from "@hyperledger/cactus-plugin-keychain-memory";
 
 import {
-  PluginLedgerConnectorFabric,
-  DefaultApi as FabricApi,
+  PluginLedgerConnectorIroha,
+  DefaultApi as IrohaApi,
   RunTransactionRequest,
-  FabricContractInvocationType,
-  DefaultEventHandlerStrategy,
-  FabricSigningCredential,
-} from "../../../../main/typescript/public-api";
+} from "../../../main/typescript/public-api";
 
 
-import { IPluginLedgerConnectorIrohaOptions } from "../../../../main/typescript/plugin-ledger-connector-iroha";
-import { DiscoveryOptions } from "fabric-network";
+import { IPluginLedgerConnectorIrohaOptions } from "../../../main/typescript/plugin-ledger-connector-iroha";
+//import { DiscoveryOptions } from "iroha-network";
 import { Configuration } from "@hyperledger/cactus-core-api";
 
 /**
@@ -106,10 +103,10 @@ test(testCase, async (t: Test) => {
 
   const pluginRegistry = new PluginRegistry({ plugins: [keychainPlugin] });
 
-  const discoveryOptions: DiscoveryOptions = {
-    enabled: true,
-    asLocalhost: true,
-  };
+  // const discoveryOptions: DiscoveryOptions = {
+  //   enabled: true,
+  //   asLocalhost: true,
+  // };
 
   const pluginOptions: IPluginLedgerConnectorIrohaOptions = {
     instanceId: uuidv4(),
@@ -125,7 +122,7 @@ test(testCase, async (t: Test) => {
       commitTimeout: 300,
     },
   };
-  const plugin = new PluginLedgerConnectorFabric(pluginOptions);
+  const plugin = new PluginLedgerConnectorIroha(pluginOptions);
 
   const expressApp = express();
   expressApp.use(bodyParser.json({ limit: "250mb" }));
@@ -140,11 +137,11 @@ test(testCase, async (t: Test) => {
   const { address, port } = addressInfo;
   const apiHost = `http://${address}:${port}`;
   t.comment(
-    `Metrics URL: ${apiHost}/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-fabric/get-prometheus-exporter-metrics`,
+    `Metrics URL: ${apiHost}/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-iroha/get-prometheus-exporter-metrics`,
   );
 
   const apiConfig = new Configuration({ basePath: apiHost });
-  const apiClient = new FabricApi(apiConfig);
+  const apiClient = new IrohaApi(apiConfig);
 
   await plugin.getOrCreateWebServices();
   await plugin.registerWebServices(expressApp);
@@ -154,10 +151,11 @@ test(testCase, async (t: Test) => {
 
   const channelName = "mychannel";
   const contractName = "basic";
-  const signingCredential: FabricSigningCredential = {
+  const signingCredential: IrohaSigningCredential = {
     keychainId,
     keychainRef: keychainEntryKey,
   };
+
   {
     const res = await apiClient.runTransactionV1({
       signingCredential,
@@ -174,11 +172,7 @@ test(testCase, async (t: Test) => {
   }
   {
     const req: RunTransactionRequest = {
-      signingCredential,
-      channelName,
-      invocationType: FabricContractInvocationType.Send,
-      contractName,
-      methodName: "CreateAsset",
+      commandName: "CreateAsset",
       params: [assetId, "yellow", "11", assetOwner, "199"],
     };
 
