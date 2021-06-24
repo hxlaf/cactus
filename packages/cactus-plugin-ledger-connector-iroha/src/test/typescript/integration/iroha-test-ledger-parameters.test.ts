@@ -14,9 +14,10 @@ test("constructor does not throw with the default config", async (t: Test) => {
 test("Iroha environment variables passed correctly", async (t: Test) => {
   t.plan(2);
   const simpleEnvVars = [
-    "BESU_MINER_ENABLED",
-    "BESU_NETWORK=dev",
-    "BESU_MIN_GAS_PRICE=0",
+    "IROHA_HOME=/opt/iroha",_
+    "IROHA_CONF=config.docker",
+    "IROHA_NODEKEY=node1",
+    "CCACHE_DIR=/tmp/ccache  "
   ];
 
   const irohaOptions = {
