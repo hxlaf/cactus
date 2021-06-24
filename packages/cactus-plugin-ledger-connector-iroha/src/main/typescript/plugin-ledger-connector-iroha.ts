@@ -219,36 +219,6 @@ export class PluginLedgerConnectorIroha
     const fnTag = `${this.className}#transact()`;
     //commandName:string
     //params:Array<any>  
-    switch (req.commandName) {
-      // Web3SigningCredentialType.GETHKEYCHAINPASSWORD is removed as Hyperledger Besu doesn't support the PERSONAL api
-      // for --rpc-http-api as per the discussion mentioned here
-      // https://chat.hyperledger.org/channel/besu-contributors?msg=GqQXfW3k79ygRtx5Q
-      case Web3SigningCredentialType.CactusKeychainRef: {
-        return this.transactCactusKeychainRef(req);
-      }
-      case Web3SigningCredentialType.PrivateKeyHex: {
-        return this.transactPrivateKey(req);
-      }
-      case Web3SigningCredentialType.None: {
-        if (req.transactionConfig.rawTransaction) {
-          return this.transactSigned(req);
-        } else {
-          throw new Error(
-            `${fnTag} Expected pre-signed raw transaction ` +
-              ` since signing credential is specified as` +
-              `Web3SigningCredentialType.NONE`,
-          );
-        }
-      }
-      default: {
-        throw new Error(
-          `${fnTag} Unrecognized Transaction type: ` +
-            `${req.web3SigningCredential.type} Supported ones are: ` +
-            `${Object.values(Web3SigningCredentialType).join(";")}`,
-        );
-      }
-    }
+    return req;
   }
-
-
 }
