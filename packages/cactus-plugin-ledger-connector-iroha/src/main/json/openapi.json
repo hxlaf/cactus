@@ -39,11 +39,11 @@
                 ],
                 "properties": {
                     "commandName": {
-                        "$ref": "#/components/schemas/Web3SigningCredential",
+                        "$ref": "#/components/schemas/commandName",
                         "nullable": false
                     },
                     "params": {
-                        "$ref": "#/components/schemas/IrohaTransactionConfig",
+                        "$ref": "#/components/schemas/params",
                         "nullable": false
                     }
                 }
@@ -58,6 +58,25 @@
                     }
                 }
             },
+            "commandName": {
+                "type": "string",
+                "enum": [
+                    "addAssetQuantity",
+                    "addPeer",
+                    "addSignatory",
+                    "appendRole"
+                ]
+            },       
+            "params": {
+                "type": "object",
+                "required": [
+                    "transactionReceipt"
+                ],
+                "properties": {
+                    "transactionReceipt": {
+                    }
+                }
+            },                 
             "InvokeContractV1Request": {
                 "type": "object",
                 "required": [
@@ -69,18 +88,11 @@
                 ],
                 "properties": {
                     "contractName": {
-                        "type": "string",
-                        "nullable": false
                     },
                     "signingCredential": {
-                        "$ref": "#/components/schemas/Web3SigningCredential",
-                        "nullable": false
                     },
                     "invocationType": {
-                        "$ref": "#/components/schemas/EthContractInvocationType",
-                        "nullable": false,
-                        "description": "Indicates wether it is a CALL or a SEND type of  invocation where only SEND ends up creating an actual transaction on the ledger."
-                    },
+                   },
                     "methodName": {
                         "description": "The name of the contract method to invoke.",
                         "type": "string",
@@ -159,14 +171,6 @@
                     "success"
                 ],
                 "properties": {
-                    "transactionReceipt": {
-                        "$ref": "#/components/schemas/Web3TransactionReceipt"
-                    },
-                    "callOutput": {},
-                    "success": {
-                        "type": "boolean",
-                        "nullable": false
-                    }
                 }
             },
             "PrometheusExporterMetricsResponse": {
