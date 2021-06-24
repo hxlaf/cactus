@@ -9,8 +9,9 @@ import express from "express";
 
 import {
   Containers,
-  IrohaTestLedgerV1,
+  IrohaTestLedger,
   pruneDockerAllIfGithubAction,
+  PostgresTestContainer
 } from "@hyperledger/cactus-test-tooling";
 import { PluginRegistry } from "@hyperledger/cactus-core";
 
@@ -56,7 +57,7 @@ test(testCase, async (t: Test) => {
     await Containers.logDiagnostics({ logLevel });
   });
 
-  const ledger = new IrohaTestLedgerV1({
+  const ledger = new IrohaTestLedger({
     emitContainerLogs: true,
     publishAllPorts: true,
     logLevel,
@@ -67,7 +68,7 @@ test(testCase, async (t: Test) => {
       ["CA_VERSION", "1.4.9"],
     ]),
   });
-  t.ok(ledger, "ledger (IrohaTestLedgerV1) truthy OK");
+  t.ok(ledger, "ledger (IrohaTestLedger) truthy OK");
 
   const tearDownLedger = async () => {
     await ledger.stop();
@@ -78,13 +79,35 @@ test(testCase, async (t: Test) => {
 
   await ledger.start();
 
-  const enrollAdminOut = await ledger.enrollAdmin();
-  const adminWallet = enrollAdminOut[1];
-  const [userIdentity] = await ledger.enrollUser(adminWallet);
+  const postgres = new PostgresTestContainer({
+    emitContainerLogs: true,
+    publishAllPorts: true,
+    logLevel,
+    imageName: "postgres",
+    imageVersion: "2021-01-01",
+    envVars: new Map([
+      ["IROHA_VERSION", "1.2.0"],
+      ["CA_VERSION", "1.4.9"],
+    ]),
+  });
+  t.ok(ledger, "ledger (PostgresTestContainer) truthy OK");
 
-  const connectionProfile = await ledger.getConnectionProfileOrg1();
+  const tearDownPostgres = async () => {
+    await postgres.stop();
+    await postgres.destroy();
+  };
 
-  const sshConfig = await ledger.getSshConfig();
+  test.onFinish(tearDownPostgres);
+
+  await postgres.start();
+
+  // const enrollAdminOut = await ledger.enrollAdmin();
+  // const adminWallet = enrollAdminOut[1];
+  // const [userIdentity] = await ledger.enrollUser(adminWallet);
+
+  // const connectionProfile = await ledger.getConnectionProfileOrg1();
+
+  // const sshConfig = await ledger.getSshConfig();
 
   const keychainInstanceId = uuidv4();
   const keychainId = uuidv4();
@@ -113,7 +136,6 @@ test(testCase, async (t: Test) => {
     pluginRegistry,
     sshConfig,
     cliContainerEnv: {},
-    peerBinary: "/fabric-samples/bin/peer",
     logLevel,
     connectionProfile,
     discoveryOptions,
@@ -146,22 +168,22 @@ test(testCase, async (t: Test) => {
   await plugin.getOrCreateWebServices();
   await plugin.registerWebServices(expressApp);
 
-  const assetId = "asset277";
-  const assetOwner = uuidv4();
+  // const assetId = "asset277";
+  // const assetOwner = uuidv4();
 
-  const channelName = "mychannel";
-  const contractName = "basic";
-  const signingCredential: IrohaSigningCredential = {
-    keychainId,
-    keychainRef: keychainEntryKey,
-  };
+  // const channelName = "mychannel";
+  // const contractName = "basic";
+  // const signingCredential: IrohaSigningCredential = {
+  //   keychainId,
+  //   keychainRef: keychainEntryKey,
+  // };
 
   {
     const res = await apiClient.runTransactionV1({
       signingCredential,
       channelName,
       contractName,
-      invocationType: FabricContractInvocationType.Call,
+      invocationType: IrohaContractInvocationType.Call,
       methodName: "GetAllAssets",
       params: [],
     } as RunTransactionRequest);
@@ -187,7 +209,7 @@ test(testCase, async (t: Test) => {
       signingCredential,
       channelName,
       contractName,
-      invocationType: FabricContractInvocationType.Call,
+      invocationType: IrohaContractInvocationType.Call,
       methodName: "GetAllAssets",
       params: [],
     } as RunTransactionRequest);
@@ -201,27 +223,27 @@ test(testCase, async (t: Test) => {
     t.equal(asset277.owner, assetOwner, `Asset has expected owner OK`);
   }
 
-  {
-    const res = await apiClient.getPrometheusExporterMetricsV1();
-    const promMetricsOutput =
-      "# HELP " +
-      K_CACTUS_FABRIC_TOTAL_TX_COUNT +
-      " Total transactions executed\n" +
-      "# TYPE " +
-      K_CACTUS_FABRIC_TOTAL_TX_COUNT +
-      " gauge\n" +
-      K_CACTUS_FABRIC_TOTAL_TX_COUNT +
-      '{type="' +
-      K_CACTUS_FABRIC_TOTAL_TX_COUNT +
-      '"} 3';
-    t.ok(res);
-    t.ok(res.data);
-    t.equal(res.status, 200);
-    t.true(
-      res.data.includes(promMetricsOutput),
-      "Total Transaction Count of 3 recorded as expected. RESULT OK",
-    );
-  }
+  // {
+  //   const res = await apiClient.getPrometheusExporterMetricsV1();
+  //   const promMetricsOutput =
+  //     "# HELP " +
+  //     K_CACTUS_IROHA_TOTAL_TX_COUNT +
+  //     " Total transactions executed\n" +
+  //     "# TYPE " +
+  //     K_CACTUS_IROHA_TOTAL_TX_COUNT +
+  //     " gauge\n" +
+  //     K_CACTUS_IROHA_TOTAL_TX_COUNT +
+  //     '{type="' +
+  //     K_CACTUS_IROHA_TOTAL_TX_COUNT +
+  //     '"} 3';
+  //   t.ok(res);
+  //   t.ok(res.data);
+  //   t.equal(res.status, 200);
+  //   t.true(
+  //     res.data.includes(promMetricsOutput),
+  //     "Total Transaction Count of 3 recorded as expected. RESULT OK",
+  //   );
+  // }
   t.end();
 });
 

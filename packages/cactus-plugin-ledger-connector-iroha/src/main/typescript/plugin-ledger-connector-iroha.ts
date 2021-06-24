@@ -58,21 +58,20 @@ import {
 
 import { RunTransactionEndpoint } from "./web-services/run-transaction-endpoint";
 import { isWeb3SigningCredentialNone } from "./model-type-guards";
-// import { BesuSignTransactionEndpointV1 } from "./web-services/sign-transaction-endpoint-v1";
-// import { PrometheusExporter } from "./prometheus-exporter/prometheus-exporter";
-// import {
-//   GetPrometheusExporterMetricsEndpointV1,
-//   IGetPrometheusExporterMetricsEndpointV1Options,
-// } from "./web-services/get-prometheus-exporter-metrics-endpoint-v1";
+import { PrometheusExporter } from "./prometheus-exporter/prometheus-exporter";
+import {
+  GetPrometheusExporterMetricsEndpointV1,
+  IGetPrometheusExporterMetricsEndpointV1Options,
+} from "./web-services/get-prometheus-exporter-metrics-endpoint-v1";
 import { WatchBlocksV1Endpoint } from "./web-services/watch-blocks-v1-endpoint";
 
-export const E_KEYCHAIN_NOT_FOUND = "cactus.connector.besu.keychain_not_found";
+export const E_KEYCHAIN_NOT_FOUND = "cactus.connector.iroha.keychain_not_found";
 
 export interface IPluginLedgerConnectorIrohaOptions
   extends ICactusPluginOptions {
   rpcTorriPort: string;
   pluginRegistry: PluginRegistry;
-  //prometheusExporter?: PrometheusExporter;
+  prometheusExporter?: PrometheusExporter;
   logLevel?: LogLevelDesc;
 }
 
@@ -195,7 +194,7 @@ export class PluginLedgerConnectorIroha
       });
       endpoints.push(endpoint);
     }
-    {
+    // {
     //   const endpoint = new InvokeContractEndpoint({
     //     connector: this,
     //     logLevel: this.options.logLevel,
@@ -209,14 +208,14 @@ export class PluginLedgerConnectorIroha
     //   });
     //   endpoints.push(endpoint);
     // }
-    // {
-    //   const opts: IGetPrometheusExporterMetricsEndpointV1Options = {
-    //     connector: this,
-    //     logLevel: this.options.logLevel,
-    //   };
-    //   const endpoint = new GetPrometheusExporterMetricsEndpointV1(opts);
-    //   endpoints.push(endpoint);
-    // }
+    {
+      const opts: IGetPrometheusExporterMetricsEndpointV1Options = {
+        connector: this,
+        logLevel: this.options.logLevel,
+      };
+      const endpoint = new GetPrometheusExporterMetricsEndpointV1(opts);
+      endpoints.push(endpoint);
+    }
     this.endpoints = endpoints;
     return endpoints;
   }
@@ -422,51 +421,5 @@ export class PluginLedgerConnectorIroha
       throw new Error(`${fnTag} Timed out ${timeoutMs}ms, polls=${tries}`);
     }
     return txReceipt;
-  }
-
-  public async signTransaction(
-    req: SignTransactionRequest,
-  ): Promise<Optional<SignTransactionResponse>> {
-    const { pluginRegistry, rpcApiHttpHost, logLevel } = this.options;
-    const { keychainId, keychainRef, transactionHash } = req;
-
-    const converter = new KeyConverter();
-
-    const web3Provider = new Web3.providers.HttpProvider(rpcApiHttpHost);
-    const web3 = new Web3(web3Provider);
-
-    // Make sure the transaction exists on the ledger first...
-    const transaction = await web3.eth.getTransaction(transactionHash);
-    if (!transaction) {
-      return Optional.empty();
-    }
-
-    const keychain = pluginRegistry.findOneByKeychainId(keychainId);
-
-    if (!keychain) {
-      const msg = `Keychain for ID ${keychainId} not found.`;
-      throw new CodedError(msg, E_KEYCHAIN_NOT_FOUND);
-    }
-
-    const pem: string = await keychain.get(keychainRef);
-
-    const pkRaw = converter.privateKeyAs(pem, KeyFormat.PEM, KeyFormat.Raw);
-
-    const jsObjectSignerOptions: IJsObjectSignerOptions = {
-      privateKey: pkRaw,
-      logLevel,
-    };
-
-    const jsObjectSigner = new JsObjectSigner(jsObjectSignerOptions);
-
-    if (transaction !== undefined && transaction !== null) {
-      const singData = jsObjectSigner.sign(transaction.input);
-      const signDataHex = Buffer.from(singData).toString("hex");
-
-      const resBody: SignTransactionResponse = { signature: signDataHex };
-      return Optional.ofNullable(resBody);
-    }
-
-    return Optional.empty();
   }
 }

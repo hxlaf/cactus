@@ -14,13 +14,13 @@ import {
 } from "@hyperledger/cactus-core-api";
 import { registerWebServiceEndpoint } from "@hyperledger/cactus-core";
 
-import { PluginLedgerConnectorBesu } from "../plugin-ledger-connector-iroha";
+import { PluginLedgerConnectorIroha } from "../plugin-ledger-connector-iroha";
 
 import OAS from "../../json/openapi.json";
 
 export interface IRunTransactionEndpointOptions {
   logLevel?: LogLevelDesc;
-  connector: PluginLedgerConnectorBesu;
+  connector: PluginLedgerConnectorIroha;
 }
 
 export class RunTransactionEndpoint implements IWebServiceEndpoint {

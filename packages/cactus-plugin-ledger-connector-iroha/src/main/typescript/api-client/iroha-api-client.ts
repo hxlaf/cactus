@@ -45,31 +45,31 @@ export class IrohaApiClient extends DefaultApi {
     this.log.debug(`basePath=${this.options.basePath}`);
   }
 
-  public async watchBlocksV1(): Promise<Observable<WatchBlocksV1Progress>> {
-    const socket: Socket = io(this.wsApiHost, { path: this.wsApiPath });
-    const subject = new ReplaySubject<WatchBlocksV1Progress>(0);
+  // public async watchBlocksV1(): Promise<Observable<WatchBlocksV1Progress>> {
+  //   const socket: Socket = io(this.wsApiHost, { path: this.wsApiPath });
+  //   const subject = new ReplaySubject<WatchBlocksV1Progress>(0);
 
-    socket.on(WatchBlocksV1.Next, (data: WatchBlocksV1Progress) => {
-      subject.next(data);
-    });
+  //   socket.on(WatchBlocksV1.Next, (data: WatchBlocksV1Progress) => {
+  //     subject.next(data);
+  //   });
 
-    socket.on("connect", () => {
-      console.log("connected OK...");
-      socket.emit(WatchBlocksV1.Subscribe);
-    });
+  //   socket.on("connect", () => {
+  //     console.log("connected OK...");
+  //     socket.emit(WatchBlocksV1.Subscribe);
+  //   });
 
-    socket.connect();
+  //   socket.connect();
 
-    return subject.pipe(
-      finalize(() => {
-        console.log("FINALIZE - unsubscribing from the stream...");
-        socket.emit(WatchBlocksV1.Unsubscribe);
-        socket.disconnect();
-      }),
-      // TODO: Investigate if we need these below - in theory without these
-      // it could happen that only the fist subscriber gets the last emitted value
-      // publishReplay(1),
-      // refCount(),
-    );
-  }
+  //   return subject.pipe(
+  //     finalize(() => {
+  //       console.log("FINALIZE - unsubscribing from the stream...");
+  //       socket.emit(WatchBlocksV1.Unsubscribe);
+  //       socket.disconnect();
+  //     }),
+  //     // TODO: Investigate if we need these below - in theory without these
+  //     // it could happen that only the fist subscriber gets the last emitted value
+  //     // publishReplay(1),
+  //     // refCount(),
+  //   );
+  // }
 }
