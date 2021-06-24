@@ -34,10 +34,11 @@ export interface IPostgresTestContainerConstructorOptions {
  * Provides default options for Postgres container
  */
 export const POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS = Object.freeze({
-  containerImageVersion: "2021-06-11-7a055c3",
-  containerImageName: "postgres:9.5-alpine",
+  containerImageVersion: "9.5-alpine",
+  containerImageName: "postgres",
   postgresPort: 5432,
-  envVars: ["IROHA_NETWORK=dev"],
+  envVars: ["POSTGRES_USER=iroha",
+  "POSTGRES_PASSWORD=HelloW0rld"],
 });
 
 /*

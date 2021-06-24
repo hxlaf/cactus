@@ -34,10 +34,13 @@ export interface IIrohaTestLedgerConstructorOptions {
  * Provides default options for Iroha container
  */
 export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
-  containerImageVersion: "2021-06-11-7a055c3",
-  containerImageName: "hyperledger/iroha:1.2.0",
+  containerImageVersion: "1.2.1",
+  containerImageName: "hyperledger/iroha",
   rpcToriiPort: 50051,
-  envVars: ["IROHA_NETWORK=dev"],
+  envVars: ["IROHA_HOME=/opt/iroha",_
+            "IROHA_CONF=config.docker",
+            "IROHA_NODEKEY=node1",
+            "CCACHE_DIR=/tmp/ccache  "],       
 });
 
 /*
@@ -100,14 +103,6 @@ export class IrohaTestLedger implements ITestLedger {
     const hostPort: number = await this.getRpcToriiPort();
     return `http://${ipAddress}:${hostPort}`;
   }
-
-  // public async getRpcApiWsHost(): Promise<string> {
-  //   const { rpcApiWsPort } = this;
-  //   const ipAddress = "127.0.0.1";
-  //   const containerInfo = await this.getContainerInfo();
-  //   const port = await Containers.getPublicPort(rpcApiWsPort, containerInfo);
-  //   return `ws://${ipAddress}:${port}`;
-  // }
 
   public async getFileContents(filePath: string): Promise<string> {
     const response: any = await this.getContainer().getArchive({
