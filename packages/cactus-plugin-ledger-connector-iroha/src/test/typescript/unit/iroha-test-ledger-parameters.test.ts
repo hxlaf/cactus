@@ -14,10 +14,10 @@ test("constructor does not throw with the default config", async (t: Test) => {
 test("Iroha environment variables passed correctly", async (t: Test) => {
   t.plan(2);
   const simpleEnvVars = [
-    "IROHA_HOME=/opt/iroha",_
+    "IROHA_HOME=/opt/iroha",
     "IROHA_CONF=config.docker",
     "IROHA_NODEKEY=node1",
-    "CCACHE_DIR=/tmp/ccache  "
+    "CCACHE_DIR=/tmp/ccache  ",
   ];
 
   const irohaOptions = {
@@ -51,4 +51,3 @@ test("Iroha environment variables passed correctly", async (t: Test) => {
 //   t.ok(irohaTestLedger);
 //   t.end();
 // });
-

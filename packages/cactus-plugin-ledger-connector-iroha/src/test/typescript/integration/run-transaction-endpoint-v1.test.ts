@@ -11,7 +11,7 @@ import {
   Containers,
   IrohaTestLedger,
   pruneDockerAllIfGithubAction,
-  PostgresTestContainer
+  PostgresTestContainer,
 } from "@hyperledger/cactus-test-tooling";
 import { PluginRegistry } from "@hyperledger/cactus-core";
 
@@ -28,7 +28,6 @@ import {
   DefaultApi as IrohaApi,
   RunTransactionRequest,
 } from "../../../main/typescript/public-api";
-
 
 import { IPluginLedgerConnectorIrohaOptions } from "../../../main/typescript/plugin-ledger-connector-iroha";
 //import { DiscoveryOptions } from "iroha-network";

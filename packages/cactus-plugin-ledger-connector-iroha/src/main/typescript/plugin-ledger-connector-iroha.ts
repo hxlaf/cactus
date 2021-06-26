@@ -1,16 +1,16 @@
 import { Server } from "http";
 import { Server as SecureServer } from "https";
-
-import type { Server as SocketIoServer } from "socket.io";
-import type { Socket as SocketIoSocket } from "socket.io";
+import { txHelper } from "iroha-helpers";
+//import type { Server as SocketIoServer } from "socket.io";
+//import type { Socket as SocketIoSocket } from "socket.io";
 import type { Express } from "express";
 import { promisify } from "util";
 import { Optional } from "typescript-optional";
 import Web3 from "web3";
-import { AbiItem } from "web3-utils";
-
-import { Contract, ContractSendMethod } from "web3-eth-contract";
-import { TransactionReceipt } from "web3-eth";
+//import { AbiItem } from "web3-utils";
+//import { Contract, ContractSendMethod } from "web3-eth-contract";
+import { Contract } from "web3-eth-contract";
+//import { TransactionReceipt } from "web3-eth";
 
 import {
   ConsensusAlgorithmFamily,
@@ -28,19 +28,14 @@ import {
 
 import {
   Checks,
-  CodedError,
-  IJsObjectSignerOptions,
-  JsObjectSigner,
-  KeyConverter,
-  KeyFormat,
   Logger,
   LoggerProvider,
   LogLevelDesc,
 } from "@hyperledger/cactus-common";
 
 import {
-  InvokeContractV1Request,
-  InvokeContractV1Response,
+  // InvokeContractV1Request,
+  // InvokeContractV1Response,
   RunTransactionRequest,
   RunTransactionResponse,
 } from "./generated/openapi/typescript-axios/";
@@ -66,20 +61,13 @@ export interface IPluginLedgerConnectorIrohaOptions
 
 export class PluginLedgerConnectorIroha
   implements
-    IPluginLedgerConnector<
-      RunTransactionRequest,
-      RunTransactionResponse
-    >,
+    IPluginLedgerConnector<RunTransactionRequest, RunTransactionResponse>,
     ICactusPlugin,
     IPluginWebService {
   private readonly instanceId: string;
   public prometheusExporter: PrometheusExporter;
   private readonly log: Logger;
-  private readonly web3: Web3;
   private readonly pluginRegistry: PluginRegistry;
-  private contracts: {
-    [name: string]: Contract;
-  } = {};
 
   private endpoints: IWebServiceEndpoint[] | undefined;
   private httpServer: Server | SecureServer | null = null;
@@ -146,10 +134,10 @@ export class PluginLedgerConnectorIroha
 
   async registerWebServices(
     app: Express,
-    wsApi: SocketIoServer,
+    //wsApi: SocketIoServer,
   ): Promise<IWebServiceEndpoint[]> {
-    const { web3 } = this;
-    const { logLevel } = this.options;
+    //const { web3 } = this;
+    //const { logLevel } = this.options;
     const webServices = await this.getOrCreateWebServices();
     await Promise.all(webServices.map((ws) => ws.registerExpress(app)));
 
@@ -211,14 +199,15 @@ export class PluginLedgerConnectorIroha
 
     return consensusHasTransactionFinality(currentConsensusAlgorithmFamily);
   }
-//...  spread
-//pass in the params 
+  //...  spread
+  //pass in the params
   public async transact(
     req: RunTransactionRequest,
   ): Promise<RunTransactionResponse> {
-    const fnTag = `${this.className}#transact()`;
+    //const fnTag = `${this.className}#transact()`;
     //commandName:string
-    //params:Array<any>  
-    return req;
+    //params:Array<any>
+    return txHelper();
+    //txhelper instance of object in the iroha connector
   }
 }
