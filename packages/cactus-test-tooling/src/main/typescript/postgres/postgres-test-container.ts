@@ -1,11 +1,8 @@
 //import all packages
-import { v4 as uuidv4 } from "uuid";
 import Docker, { Container, ContainerInfo } from "dockerode";
 import Joi from "joi";
 import tar from "tar-stream";
 import { EventEmitter } from "events";
-import Web3 from "web3";
-import { Account } from "web3-core";
 import {
   LogLevelDesc,
   Logger,
@@ -13,11 +10,10 @@ import {
 } from "@hyperledger/cactus-common";
 import { ITestLedger } from "../i-test-ledger";
 import { Streams } from "../common/streams";
-import { IKeyPair } from "../i-key-pair";
-import { Containers } from "../common/containers";
-import { NumberLiteralType } from "typescript";
-import { DefaultSerializer } from "v8";
-import { DEFAULTS } from "ts-node";
+//import { Containers } from "../common/containers";
+//import { NumberLiteralType } from "typescript";
+//import { DefaultSerializer } from "v8";
+//import { DEFAULTS } from "ts-node";
 
 /*
  * Contains options for Postgres container
@@ -37,8 +33,7 @@ export const POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS = Object.freeze({
   containerImageVersion: "9.5-alpine",
   containerImageName: "postgres",
   postgresPort: 5432,
-  envVars: ["POSTGRES_USER=iroha",
-  "POSTGRES_PASSWORD=HelloW0rld"],
+  envVars: ["POSTGRES_USER=iroha", "POSTGRES_PASSWORD=HelloW0rld"],
 });
 
 /*
@@ -63,7 +58,9 @@ export class PostgresTestContainer implements ITestLedger {
   private container: Container | undefined;
   private containerId: string | undefined;
 
-  constructor(public readonly options: IPostgresTestContainerConstructorOptions = {}) {
+  constructor(
+    public readonly options: IPostgresTestContainerConstructorOptions = {},
+  ) {
     if (!options) {
       throw new TypeError(`PostgresTestContainer#ctor options was falsy.`);
     }
@@ -74,8 +71,10 @@ export class PostgresTestContainer implements ITestLedger {
       options.containerImageName ||
       POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.containerImageName;
     this.postgresPort =
-      options.postgresPort || POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.postgresPort;
-    this.envVars = options.envVars || POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.envVars;
+      options.postgresPort ||
+      POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.postgresPort;
+    this.envVars =
+      options.envVars || POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.envVars;
 
     this.validateConstructorOptions();
     const label = "postgres-test-container";
@@ -95,7 +94,7 @@ export class PostgresTestContainer implements ITestLedger {
   public getContainerImageName(): string {
     return `${this.containerImageName}:${this.containerImageVersion}`;
   }
-  
+
   public async getPostgresPortHost(): Promise<string> {
     const ipAddress = "127.0.0.1";
     const hostPort: number = await this.getPostgresPort();
@@ -148,7 +147,7 @@ export class PostgresTestContainer implements ITestLedger {
         [],
         {
           ExposedPorts: {
-            [`${this.postgresPort}/tcp`]: {}, // postgres Port - HTTP             
+            [`${this.postgresPort}/tcp`]: {}, // postgres Port - HTTP
           },
           // TODO: this can be removed once the new docker image is published and
           // specified as the default one to be used by the tests.
@@ -251,7 +250,9 @@ export class PostgresTestContainer implements ITestLedger {
     if (aContainerInfo) {
       return aContainerInfo;
     } else {
-      throw new Error(`PostgresTestContainer#getContainerInfo() no image "${image}"`);
+      throw new Error(
+        `PostgresTestContainer#getContainerInfo() no image "${image}"`,
+      );
     }
   }
 
@@ -320,7 +321,9 @@ export class PostgresTestContainer implements ITestLedger {
   }
 
   private validateConstructorOptions(): void {
-    const validationResult = Joi.validate<IPostgresTestContainerConstructorOptions>(
+    const validationResult = Joi.validate<
+      IPostgresTestContainerConstructorOptions
+    >(
       {
         containerImageVersion: this.containerImageVersion,
         containerImageName: this.containerImageName,

@@ -1,11 +1,8 @@
 //import all packages
-import { v4 as uuidv4 } from "uuid";
 import Docker, { Container, ContainerInfo } from "dockerode";
 import Joi from "joi";
 import tar from "tar-stream";
 import { EventEmitter } from "events";
-import Web3 from "web3";
-import { Account } from "web3-core";
 import {
   LogLevelDesc,
   Logger,
@@ -13,11 +10,10 @@ import {
 } from "@hyperledger/cactus-common";
 import { ITestLedger } from "../i-test-ledger";
 import { Streams } from "../common/streams";
-import { IKeyPair } from "../i-key-pair";
-import { Containers } from "../common/containers";
-import { NumberLiteralType } from "typescript";
-import { DefaultSerializer } from "v8";
-import { DEFAULTS } from "ts-node";
+//import { Containers } from "../common/containers";
+//import { NumberLiteralType } from "typescript";
+//import { DefaultSerializer } from "v8";
+//import { DEFAULTS } from "ts-node";
 
 /*
  * Contains options for Iroha container
@@ -37,10 +33,12 @@ export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
   containerImageVersion: "1.2.1",
   containerImageName: "hyperledger/iroha",
   rpcToriiPort: 50051,
-  envVars: ["IROHA_HOME=/opt/iroha",_
-            "IROHA_CONF=config.docker",
-            "IROHA_NODEKEY=node1",
-            "CCACHE_DIR=/tmp/ccache  "],       
+  envVars: [
+    "IROHA_HOME=/opt/iroha",
+    "IROHA_CONF=config.docker",
+    "IROHA_NODEKEY=node1",
+    "CCACHE_DIR=/tmp/ccache  ",
+  ],
 });
 
 /*
@@ -65,7 +63,9 @@ export class IrohaTestLedger implements ITestLedger {
   private container: Container | undefined;
   private containerId: string | undefined;
 
-  constructor(public readonly options: IIrohaTestLedgerConstructorOptions = {}) {
+  constructor(
+    public readonly options: IIrohaTestLedgerConstructorOptions = {},
+  ) {
     if (!options) {
       throw new TypeError(`IrohaTestLedger#ctor options was falsy.`);
     }
@@ -75,7 +75,7 @@ export class IrohaTestLedger implements ITestLedger {
     this.containerImageName =
       options.containerImageName ||
       IROHA_TEST_LEDGER_DEFAULT_OPTIONS.containerImageName;
-    this.rpcToriiPort = 
+    this.rpcToriiPort =
       options.rpcToriiPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcToriiPort;
     this.envVars = options.envVars || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.envVars;
 
@@ -149,7 +149,7 @@ export class IrohaTestLedger implements ITestLedger {
         [],
         [],
         {
-          ExposedPorts: {            
+          ExposedPorts: {
             [`${this.rpcToriiPort}/tcp`]: {}, // Iroha RPC - Torii
           },
           // TODO: this can be removed once the new docker image is published and
