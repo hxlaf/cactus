@@ -6,10 +6,8 @@ import { txHelper } from "iroha-helpers";
 import type { Express } from "express";
 import { promisify } from "util";
 import { Optional } from "typescript-optional";
-import Web3 from "web3";
 //import { AbiItem } from "web3-utils";
 //import { Contract, ContractSendMethod } from "web3-eth-contract";
-import { Contract } from "web3-eth-contract";
 //import { TransactionReceipt } from "web3-eth";
 
 import {
@@ -207,7 +205,7 @@ export class PluginLedgerConnectorIroha
     //const fnTag = `${this.className}#transact()`;
     //commandName:string
     //params:Array<any>
-    return txHelper();
+    return txHelper(req);
     //txhelper instance of object in the iroha connector
   }
 }

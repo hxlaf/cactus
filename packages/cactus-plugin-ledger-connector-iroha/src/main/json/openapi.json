@@ -39,12 +39,14 @@
                 ],
                 "properties": {
                     "commandName": {
-                        "$ref": "#/components/schemas/commandName",
+                        "type": "string",
                         "nullable": false
                     },
                     "params": {
-                        "$ref": "#/components/schemas/params",
-                        "nullable": false
+                        "description": "The list of arguments to pass in to the trasnsaction request.",
+                        "type": "array",
+                        "default": [],
+                        "items": {}
                     }
                 }
             },
