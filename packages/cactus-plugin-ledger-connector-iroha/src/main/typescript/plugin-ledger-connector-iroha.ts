@@ -1,6 +1,14 @@
 import { Server } from "http";
+import * as grpc from "grpc";
 import { Server as SecureServer } from "https";
-import { txHelper } from "iroha-helpers";
+//import { txHelper, CreateAccount, Transaction } from "iroha-helpers";
+import { CommandService_v1Client as CommandService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
+import commands from "iroha-helpers-ts/lib/commands/index";
+// import {
+//   CommandService_v1Client as CommandService,
+//   QueryService_v1Client as QueryService
+// } from "iroha-helpers/lib/proto/endpoint_pb_service";
+//import * as Transaction from './proto/transaction_pb'
 //import type { Server as SocketIoServer } from "socket.io";
 //import type { Socket as SocketIoSocket } from "socket.io";
 import type { Express } from "express";
@@ -45,6 +53,8 @@ import {
   GetPrometheusExporterMetricsEndpointV1,
   IGetPrometheusExporterMetricsEndpointV1Options,
 } from "./web-services/get-prometheus-exporter-metrics-endpoint-v1";
+//import { stringify } from "querystring";
+//import { transcode } from "buffer";
 //import { WatchBlocksV1Endpoint } from "./web-services/watch-blocks-v1-endpoint";
 
 export const E_KEYCHAIN_NOT_FOUND = "cactus.connector.iroha.keychain_not_found";
@@ -59,7 +69,12 @@ export interface IPluginLedgerConnectorIrohaOptions
 
 export class PluginLedgerConnectorIroha
   implements
-    IPluginLedgerConnector<RunTransactionRequest, RunTransactionResponse>,
+    IPluginLedgerConnector<
+      never,
+      never,
+      RunTransactionRequest,
+      RunTransactionResponse
+    >,
     ICactusPlugin,
     IPluginWebService {
   private readonly instanceId: string;
@@ -102,6 +117,9 @@ export class PluginLedgerConnectorIroha
     );
 
     this.prometheusExporter.startMetricsCollection();
+  }
+  deployContract(): Promise<never> {
+    throw new Error("Method not implemented.");
   }
 
   public getPrometheusExporter(): PrometheusExporter {
@@ -202,10 +220,53 @@ export class PluginLedgerConnectorIroha
   public async transact(
     req: RunTransactionRequest,
   ): Promise<RunTransactionResponse> {
-    //const fnTag = `${this.className}#transact()`;
-    //commandName:string
-    //params:Array<any>
-    return txHelper(req);
+    const testAccFull = "admin@iroha";
+    const adminPriv =
+      "f101537e319568c765b2cc89698325604991dca57b9716b58016b253506cab70";
+    const commandService = new CommandService(
+      "localhost:50051",
+      grpc.credentials.createInsecure(),
+    );
+
+    const commandOptions = {
+      privateKeys: [adminPriv],
+      creatorAccountId: testAccFull,
+      quorum: 1,
+      commandService: commandService,
+      timeoutLimit: 5000,
+    };
+    const { commandName, params } = req;
+    //const [transactConfig] = params;
+    if (commandName == "createAccount") {
+      try {
+        commands
+          .createAccount(commandOptions, {
+            accName: params[0], //accountName
+            domainId: params[1], //domainID
+            publickey: params[2], //public key
+          })
+          .then((res) => {
+            return { transactionReceipt: res };
+          });
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (commandName == "createAsset") {
+    } else if (commandName == "createDomain") {
+    }
+    return { transactionReceipt: "command does not exist" };
     //txhelper instance of object in the iroha connector
   }
 }
+
+// const Tx = new TxBuilder()
+//   .createAccount({
+//     accountName: "user1",
+//     domainId: "test",
+//     publicKey:
+//       "0000000000000000000000000000000000000000000000000000000000000000",
+//   })
+//   .addMeta("admin@test", 1)
+//   .send(commandService)
+//   .then(res => console.log(res))
+//   .catch(err => console.error(res))

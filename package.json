@@ -64,6 +64,7 @@
     "@commitlint/cli": "11.0.0",
     "@commitlint/config-conventional": "8.0.0",
     "@openapitools/openapi-generator-cli": "2.3.3",
+    "@types/google-protobuf": "^3.15.2",
     "@types/node-fetch": "2.5.4",
     "@types/tape": "4.13.0",
     "@types/tape-promise": "4.0.1",
@@ -85,8 +86,11 @@
     "eslint-plugin-promise": "4.1.1",
     "eslint-plugin-standard": "4.0.0",
     "git-cz": "4.7.6",
+    "grpc_tools_node_protoc_ts": "^5.3.0",
+    "grpc-tools": "^1.11.2",
     "husky": "4.2.5",
     "inquirer": "7.1.0",
+    "iroha-helpers-ts": "^0.9.25-ss",
     "karma": "6.3.2",
     "karma-chrome-launcher": "3.1.0",
     "karma-electron": "6.3.1",
@@ -127,6 +131,7 @@
   "dependencies": {
     "@types/ssh2": "0.5.46",
     "artillery": "^1.5.6",
-    "cspell": "5.4.0"
+    "cspell": "5.4.0",
+    "grpc": "^1.24.10"
   }
 }

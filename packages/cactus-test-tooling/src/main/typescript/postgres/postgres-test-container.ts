@@ -30,7 +30,7 @@ export interface IPostgresTestContainerConstructorOptions {
  * Provides default options for Postgres container
  */
 export const POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS = Object.freeze({
-  containerImageVersion: "9.5-alpine",
+  containerImageVersion: "13.2-alpine",
   containerImageName: "postgres",
   postgresPort: 5432,
   envVars: ["POSTGRES_USER=iroha", "POSTGRES_PASSWORD=HelloW0rld"],
@@ -135,7 +135,8 @@ export class PostgresTestContainer implements ITestLedger {
       await this.container.remove();
     }
     const docker = new Docker();
-
+    this.log.debug(`Creating Iroha network ...`);
+    docker.createNetwork("iroha-network");
     this.log.debug(`Pulling container image ${imageFqn} ...`);
     await this.pullContainerImage(imageFqn);
     this.log.debug(`Pulled ${imageFqn} OK. Starting container...`);
@@ -146,26 +147,15 @@ export class PostgresTestContainer implements ITestLedger {
         [],
         [],
         {
+          name: "iroha_postgres_1",
           ExposedPorts: {
             [`${this.postgresPort}/tcp`]: {}, // postgres Port - HTTP
           },
-          // TODO: this can be removed once the new docker image is published and
-          // specified as the default one to be used by the tests.
-          Healthcheck: {
-            Test: [
-              "CMD-SHELL",
-              //`curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' localhost:8545`,
-            ],
-            Interval: 1000000000, // 1 second
-            Timeout: 3000000000, // 3 seconds
-            Retries: 299,
-            StartPeriod: 3000000000, // 1 second
-          },
-          // This is a workaround needed for macOS which has issues with routing
-          // to docker container's IP addresses directly...
-          // https://stackoverflow.com/a/39217691
           PublishAllPorts: true,
           Env: this.envVars,
+          HostConfig: {
+            NetworkMode: "iroha_network",
+          },
         },
         {},
         (err: unknown) => {

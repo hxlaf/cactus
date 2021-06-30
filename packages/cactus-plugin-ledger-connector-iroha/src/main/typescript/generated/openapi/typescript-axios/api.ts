@@ -24,18 +24,6 @@ import { BASE_PATH, COLLECTION_FORMATS, RequestArgs, BaseAPI, RequiredError } fr
 /**
  * 
  * @export
- * @enum {string}
- */
-export enum CommandName {
-    AddAssetQuantity = 'addAssetQuantity',
-    AddPeer = 'addPeer',
-    AddSignatory = 'addSignatory',
-    AppendRole = 'appendRole'
-}
-
-/**
- * 
- * @export
  * @interface InlineResponse501
  */
 export interface InlineResponse501 {
@@ -134,34 +122,21 @@ export interface InvokeContractV1Request {
 /**
  * 
  * @export
- * @interface Params
- */
-export interface Params {
-    /**
-     * 
-     * @type {any}
-     * @memberof Params
-     */
-    transactionReceipt: any | null;
-}
-/**
- * 
- * @export
  * @interface RunTransactionRequest
  */
 export interface RunTransactionRequest {
     /**
      * 
-     * @type {CommandName}
+     * @type {string}
      * @memberof RunTransactionRequest
      */
-    commandName: CommandName;
+    commandName: string;
     /**
-     * 
-     * @type {Params}
+     * The list of arguments to pass in to the trasnsaction request.
+     * @type {Array<any>}
      * @memberof RunTransactionRequest
      */
-    params: Params;
+    params: Array<any>;
 }
 /**
  * 

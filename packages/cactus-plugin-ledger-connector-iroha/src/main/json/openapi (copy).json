@@ -147,6 +147,70 @@
       "PrometheusExporterMetricsResponse": {
         "type": "string",
         "nullable": false
+      },
+      "getAssetInfoResponse": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string"
+          },
+          "domainId": {
+            "type": "string"
+          },
+          "precision": {
+            "type": "number"
+          }
+        }
+      },
+      "IrohaSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "txHash": {
+            "type": "string",
+            "example": "5a33387b7e0cfe4b2d79fdc9bbba61a235a268eef211a73a282b9ce30ac06e28"
+          },
+          "status": {
+            "type": "string",
+            "example": "COMMITTED"
+          }
+        }
+      },
+      "IrohaErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Command response error: expected=COMMITTED, actual=REJECTED"
+          },
+          "status": {
+            "type": "string",
+            "example": "REJECTED"
+          }
+        }
+      },
+      "IrohaAuthErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Invalid. Iroha key and/or account id is missing."
+          },
+          "status": {
+            "type": "string",
+            "example": "REJECTED"
+          }
+        }
+      },
+      "InvalidResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
       }
     }
   },

@@ -30,17 +30,20 @@ export interface IIrohaTestLedgerConstructorOptions {
  * Provides default options for Iroha container
  */
 export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
-  containerImageVersion: "1.2.1",
+  containerImageVersion: "1.2.0",
   containerImageName: "hyperledger/iroha",
   rpcToriiPort: 50051,
   envVars: [
-    "IROHA_HOME=/opt/iroha",
-    "IROHA_CONF=config.docker",
-    "IROHA_NODEKEY=node1",
-    "CCACHE_DIR=/tmp/ccache  ",
+    "IROHA_POSTGRES_HOST=postgres_1",
+    "IROHA_POSTGRES_PORT=5432",
+    "IROHA_POSTGRES_USER=postgres",
+    "IROHA_POSTGRES_PASSWORD=mysecretpassword",
+    "KEY=node0",
   ],
 });
 
+//can we go inside the docker container and then test within the docker dcontainer
+///initiated by the dockrode service
 /*
  * Provides validations for Iroha container's options
  */
@@ -138,7 +141,13 @@ export class IrohaTestLedger implements ITestLedger {
       await this.container.remove();
     }
     const docker = new Docker();
-
+    this.log.debug(`Creating Iroha volume blockstore...`);
+    const ccacheVolume = {
+      Name: "blockstore",
+      Driver: "local",
+      Mountpoint: "/var/lib/docker/volumes/blockstore",
+    };
+    docker.createVolume(ccacheVolume);
     this.log.debug(`Pulling container image ${imageFqn} ...`);
     await this.pullContainerImage(imageFqn);
     this.log.debug(`Pulled ${imageFqn} OK. Starting container...`);
@@ -152,23 +161,16 @@ export class IrohaTestLedger implements ITestLedger {
           ExposedPorts: {
             [`${this.rpcToriiPort}/tcp`]: {}, // Iroha RPC - Torii
           },
-          // TODO: this can be removed once the new docker image is published and
-          // specified as the default one to be used by the tests.
-          Healthcheck: {
-            Test: [
-              "CMD-SHELL",
-              //`curl -X POST --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' localhost:8545`,
-            ],
-            Interval: 1000000000, // 1 second
-            Timeout: 3000000000, // 3 seconds
-            Retries: 299,
-            StartPeriod: 3000000000, // 1 second
-          },
-          // This is a workaround needed for macOS which has issues with routing
-          // to docker container's IP addresses directly...
-          // https://stackoverflow.com/a/39217691
           PublishAllPorts: true,
           Env: this.envVars,
+          HostConfig: {
+            AutoRemove: true,
+            NetworkMode: "iroha_network",
+            Binds: [
+              `./example:/opt/iroha_data`,
+              `blockstore:/tmp/block_store:delegated`,
+            ],
+          },
         },
         {},
         (err: unknown) => {

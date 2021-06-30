@@ -11,24 +11,25 @@ test("constructor does not throw with the default config", async (t: Test) => {
   t.end();
 });
 
-test("Iroha environment variables passed correctly", async (t: Test) => {
-  t.plan(2);
-  const simpleEnvVars = [
-    "IROHA_HOME=/opt/iroha",
-    "IROHA_CONF=config.docker",
-    "IROHA_NODEKEY=node1",
-    "CCACHE_DIR=/tmp/ccache  ",
-  ];
+// test("Iroha environment variables passed correctly", async (t: Test) => {
+//   t.plan(2);
+//   const simpleEnvVars = [
+//     "IROHA_POSTGRES_HOST=postgres_1",
+//     "IROHA_POSTGRES_PORT=5432",
+//     "IROHA_POSTGRES_USER=postgres",
+//     "IROHA_POSTGRES_PASSWORD=mysecretpassword",
+//     "KEY=node0",
+//   ];
 
-  const irohaOptions = {
-    envVars: simpleEnvVars,
-  };
-  const irohaTestLedger = new IrohaTestLedger(irohaOptions);
+//   const irohaOptions = {
+//     envVars: simpleEnvVars,
+//   };
+//   const irohaTestLedger = new IrohaTestLedger(irohaOptions);
 
-  t.equal(irohaTestLedger.envVars, simpleEnvVars);
-  t.ok(irohaTestLedger);
-  t.end();
-});
+//   t.equal(irohaTestLedger.envVars, simpleEnvVars);
+//   t.ok(irohaTestLedger);
+//   t.end();
+// });
 
 // test("deploys an Iroha Node on the Rinkeby network", async (t: Test) => {
 //   t.plan(2);

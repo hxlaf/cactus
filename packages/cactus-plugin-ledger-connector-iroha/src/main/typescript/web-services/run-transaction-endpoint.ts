@@ -6,7 +6,7 @@ import {
   LogLevelDesc,
   LoggerProvider,
   IAsyncProvider,
-} from "hyperledger/cactus-common";
+} from "@hyperledger/cactus-common";
 import {
   IEndpointAuthzOptions,
   IExpressRequestHandler,
