@@ -12,6 +12,7 @@ import {
   //IrohaTestLedger,
   pruneDockerAllIfGithubAction,
   PostgresTestContainer,
+  IrohaTestLedger,
 } from "@hyperledger/cactus-test-tooling";
 //import { PluginRegistry } from "@hyperledger/cactus-core";
 
@@ -61,12 +62,33 @@ test(testCase, async (t: Test) => {
     envVars: ["POSTGRES_USER=postgres", "POSTGRES_PASSWORD=mysecretpassword"],
   });
 
-  const tearDownPostgres = async () => {
-    await postgres.stop();
-    await postgres.destroy();
-  };
-  test.onFinish(tearDownPostgres);
+  const iroha = new IrohaTestLedger({
+    containerImageVersion: "1.2.0",
+    containerImageName: "hyperledger/iroha",
+    rpcToriiPort: 50051,
+    envVars: [
+      "IROHA_POSTGRES_HOST=postgres_1",
+      "IROHA_POSTGRES_PORT=5432",
+      "IROHA_POSTGRES_USER=postgres",
+      "IROHA_POSTGRES_PASSWORD=mysecretpassword",
+      "KEY=node0",
+    ],
+  });
+
+  // const tearDownPostgres = async () => {
+  //   await postgres.stop();
+  //   await postgres.destroy();
+  // };
+
+  // const tearDownIroha = async () => {
+  //   await iroha.stop();
+  //   await iroha.destroy();
+  // };
+
+  // test.onFinish(tearDownPostgres);
+  // test.onFinish(tearDownIroha);
   await postgres.start();
+  await iroha.start();
   t.end();
 });
 

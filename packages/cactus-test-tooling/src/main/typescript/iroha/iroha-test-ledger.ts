@@ -150,7 +150,7 @@ export class IrohaTestLedger implements ITestLedger {
     docker.createVolume(ccacheVolume);
     this.log.debug(`Pulling container image ${imageFqn} ...`);
     await this.pullContainerImage(imageFqn);
-    this.log.debug(`Pulled ${imageFqn} OK. Starting container...`);
+    this.log.warn(`Pulled ${imageFqn} OK. Starting container...`);
 
     return new Promise<Container>((resolve, reject) => {
       const eventEmitter: EventEmitter = docker.run(
@@ -164,11 +164,19 @@ export class IrohaTestLedger implements ITestLedger {
           PublishAllPorts: true,
           Env: this.envVars,
           HostConfig: {
+            PortBindings: {
+              "50051/tcp": [
+                {
+                  HostPort: "50051",
+                },
+              ],
+            },
             AutoRemove: true,
-            NetworkMode: "iroha_network",
+            NetworkMode: "iroha-network",
             Binds: [
-              `./example:/opt/iroha_data`,
-              `blockstore:/tmp/block_store:delegated`,
+              `/home/han/workspace/cactus_dev/packages/cactus-test-tooling/src/main/typescript/iroha/example:/opt/iroha_data`,
+              //              `$(pwd)/example:/opt/iroha_data`,
+              `blockstore:/tmp/block_store`,
             ],
           },
         },

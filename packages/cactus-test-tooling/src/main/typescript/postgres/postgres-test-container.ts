@@ -164,7 +164,7 @@ export class PostgresTestContainer implements ITestLedger {
         [],
         [],
         {
-          name: "iroha_postgres_1",
+          name: "some-postgres",
           ExposedPorts: {
             [`${this.postgresPort}/tcp`]: {}, // postgres Port - HTTP
           },
