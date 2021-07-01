@@ -136,7 +136,24 @@ export class PostgresTestContainer implements ITestLedger {
     }
     const docker = new Docker();
     this.log.debug(`Creating Iroha network ...`);
-    docker.createNetwork("iroha-network");
+    try {
+      docker.createNetwork({
+        Name: "iroha-network",
+        Driver: "bridge",
+        // IPAM: {
+        //   Config: [
+        //     {
+        //       Subnet: "172.20.0.0/16",
+        //       IPRange: "172.20.10.0/24",
+        //       Gateway: "172.20.10.12",
+        //     },
+        //   ],
+        // },
+      });
+    } catch (err) {
+      throw new Error(err);
+    }
+
     this.log.debug(`Pulling container image ${imageFqn} ...`);
     await this.pullContainerImage(imageFqn);
     this.log.debug(`Pulled ${imageFqn} OK. Starting container...`);
@@ -153,9 +170,27 @@ export class PostgresTestContainer implements ITestLedger {
           },
           PublishAllPorts: true,
           Env: this.envVars,
-          HostConfig: {
-            NetworkMode: "iroha_network",
+          Healthcheck: {
+            Test: ["CMD-SHELL", "pg_isready -U postgres"],
+            Interval: 1000000000, // 1 second
+            Timeout: 3000000000, // 3 seconds
+            Retries: 299,
+            StartPeriod: 3000000000, // 1 second
           },
+          HostConfig: {
+            PortBindings: {
+              "5432/tcp": [
+                {
+                  HostPort: "5432",
+                },
+              ],
+            },
+            AutoRemove: true,
+            NetworkMode: "iroha-network",
+          },
+          // NetworkingConfig: {
+          //   EndpointsConfig: "iroha-network",
+          // },
         },
         {},
         (err: unknown) => {
@@ -219,6 +254,12 @@ export class PostgresTestContainer implements ITestLedger {
 
   public destroy(): Promise<any> {
     const fnTag = "PostgresTestContainer#destroy()";
+    const docker = new Docker();
+    try {
+      docker.pruneNetworks();
+    } catch (ex) {
+      this.log.warn(`Failed to prune docker network: `, ex);
+    }
     if (this.container) {
       return this.container.remove();
     } else {
