@@ -256,7 +256,7 @@ export class PostgresTestContainer implements ITestLedger {
     const fnTag = "PostgresTestContainer#destroy()";
     const docker = new Docker();
     try {
-      docker.pruneNetworks();
+      docker.pruneNetworks(); //remove "iroha-network"
     } catch (ex) {
       this.log.warn(`Failed to prune docker network: `, ex);
     }

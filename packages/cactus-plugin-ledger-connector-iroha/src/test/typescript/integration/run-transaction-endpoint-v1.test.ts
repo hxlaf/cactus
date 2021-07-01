@@ -63,9 +63,10 @@ test(testCase, async (t: Test) => {
   });
 
   const iroha = new IrohaTestLedger({
-    containerImageVersion: "1.2.0",
-    containerImageName: "hyperledger/iroha",
+    containerImageVersion: "1.20a",
+    containerImageName: "hanxyz/iroha",
     rpcToriiPort: 50051,
+    logLevel: "TRACE",
     envVars: [
       "IROHA_POSTGRES_HOST=postgres_1",
       "IROHA_POSTGRES_PORT=5432",
@@ -75,18 +76,20 @@ test(testCase, async (t: Test) => {
     ],
   });
 
-  // const tearDownPostgres = async () => {
-  //   await postgres.stop();
-  //   await postgres.destroy();
-  // };
+  // test the transaction
 
-  // const tearDownIroha = async () => {
-  //   await iroha.stop();
-  //   await iroha.destroy();
-  // };
+  const tearDownPostgres = async () => {
+    await postgres.stop();
+    await postgres.destroy();
+  };
 
-  // test.onFinish(tearDownPostgres);
-  // test.onFinish(tearDownIroha);
+  const tearDownIroha = async () => {
+    await iroha.stop();
+    await iroha.destroy();
+  };
+
+  test.onFinish(tearDownPostgres);
+  test.onFinish(tearDownIroha);
   await postgres.start();
   await iroha.start();
   t.end();
@@ -269,8 +272,8 @@ test(testCase, async (t: Test) => {
 //   t.end();
 // });
 
-// test("AFTER " + testCase, async (t: Test) => {
-//   const pruning = pruneDockerAllIfGithubAction({ logLevel });
-//   await t.doesNotReject(pruning, "Pruning didn't throw OK");
-//   t.end();
-// });
+test("AFTER " + testCase, async (t: Test) => {
+  const pruning = pruneDockerAllIfGithubAction({ logLevel });
+  await t.doesNotReject(pruning, "Pruning didn't throw OK");
+  t.end();
+});
