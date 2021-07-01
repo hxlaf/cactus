@@ -148,9 +148,9 @@ export class IrohaTestLedger implements ITestLedger {
       Mountpoint: "/var/lib/docker/volumes/blockstore",
     };
     docker.createVolume(ccacheVolume);
-    // this.log.debug(`Pulling container image ${imageFqn} ...`);
-    // await this.pullContainerImage(imageFqn);
-    // this.log.warn(`Pulled ${imageFqn} OK. Starting container...`);
+    this.log.debug(`Pulling container image ${imageFqn} ...`);
+    await this.pullContainerImage(imageFqn);
+    this.log.warn(`Pulled ${imageFqn} OK. Starting container...`);
 
     return new Promise<Container>((resolve, reject) => {
       const eventEmitter: EventEmitter = docker.run(
@@ -264,9 +264,15 @@ export class IrohaTestLedger implements ITestLedger {
     const fnTag = "IrohaTestLedger#destroy()";
     const docker = new Docker();
     try {
-      docker.pruneVolumes(); //remove "iroha-network"
+      docker.pruneVolumes(); //remove blockstore volume
     } catch (ex) {
       this.log.warn(`Failed to prune docker volume: `, ex);
+    }
+    //remove network
+    try {
+      docker.pruneNetworks(); //remove "iroha-network"
+    } catch (ex) {
+      this.log.warn(`Failed to prune docker network: `, ex);
     }
     //remove container
     if (this.container) {

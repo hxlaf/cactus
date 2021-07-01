@@ -87,9 +87,10 @@ test(testCase, async (t: Test) => {
     await iroha.stop();
     await iroha.destroy();
   };
-
-  test.onFinish(tearDownPostgres);
+  //tear down Iroha first
   test.onFinish(tearDownIroha);
+  test.onFinish(tearDownPostgres);
+  //start postgres first
   await postgres.start();
   await iroha.start();
   t.end();
