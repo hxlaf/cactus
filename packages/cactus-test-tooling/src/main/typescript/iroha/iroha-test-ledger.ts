@@ -32,7 +32,7 @@ export interface IIrohaTestLedgerConstructorOptions {
 export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
   containerImageVersion: "1.2.0",
   containerImageName: "hyperledger/iroha",
-  rpcToriiPort: 50051,
+  rpcToriiPort: 50051, //grpc
   envVars: [
     "IROHA_POSTGRES_HOST=postgres_1",
     "IROHA_POSTGRES_PORT=5432",

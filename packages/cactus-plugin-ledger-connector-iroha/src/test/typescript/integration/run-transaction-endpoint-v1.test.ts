@@ -127,9 +127,10 @@ test(testCase, async (t: Test) => {
   //start postgres first
   await postgres.start();
   await iroha.start();
+  await new Promise((resolve) => setTimeout(resolve, 10000)); //sleep for 10 seconds
   try {
     await commands.createAccount(commandOptions, {
-      accountName: aliceAccName,
+      accountName: aliceAccName, //alice@test
       domainId: irohaDomain,
       publicKey: alicePubKey,
     });
