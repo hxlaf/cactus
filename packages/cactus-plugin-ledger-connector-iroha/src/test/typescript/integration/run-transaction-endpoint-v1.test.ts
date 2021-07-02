@@ -1,11 +1,11 @@
-// import http from "http";
-// import { AddressInfo } from "net";
+//import http from "http";
+//import { AddressInfo } from "net";
 
 import test, { Test } from "tape-promise/tape";
 //import { v4 as uuidv4 } from "uuid";
 
-// import bodyParser from "body-parser";
-// import express from "express";
+//import bodyParser from "body-parser";
+//import express from "express";
 
 import {
   Containers,
@@ -18,16 +18,17 @@ import {
 
 import {
   //IListenOptions,
-  //IListenOptions,
   LogLevelDesc,
   //Servers,
 } from "@hyperledger/cactus-common";
+
+//import { PluginKeychainMemory } from "@hyperledger/cactus-plugin-keychain-memory";
+
 // import {
-//   //PluginLedgerConnectorIroha,
+//   PluginLedgerConnectorIroha,
 //   DefaultApi as IrohaApi,
 //   RunTransactionRequest,
 // } from "../../../main/typescript/public-api";
-// import { Configuration } from "../../../../../cactus-core-api/dist/types/main/typescript";
 
 //import { IPluginLedgerConnectorIrohaOptions } from "../../../main/typescript/plugin-ledger-connector-iroha";
 //import { DiscoveryOptions } from "iroha-network";
@@ -39,44 +40,9 @@ import {
  * export HFC_LOGGING='{"debug":"console","info":"console"}'
  * ```
  */
-import * as grpc from "grpc";
-import { CommandService_v1Client as CommandService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
-import commands from "iroha-helpers-ts/lib/commands/index";
 
 const testCase = "runs tx on an Iroha v1.2.0 ledger";
 const logLevel: LogLevelDesc = "TRACE";
-const irohaDomain = "test";
-const testAccName = "admin";
-const aliceAccName = "alice";
-const testAccFull = `${testAccName}@${irohaDomain}`;
-//const aliceAccFull = `${aliceAccName}@${irohaDomain}`;
-const adminPriv =
-  "f101537e319568c765b2cc89698325604991dca57b9716b58016b253506cab70";
-const alicePubKey =
-  "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910";
-
-const commandOptions = {
-  privateKeys: [adminPriv],
-  creatorAccountId: testAccFull,
-  quorum: 1,
-  commandService: new CommandService(
-    "localhost:50051",
-    grpc.credentials.createInsecure(),
-  ),
-  timeoutLimit: 5000,
-};
-// async function tryToCreateAccount(
-//   accountName: string,
-//   domainId: string,
-//   publicKey: string,
-// ) {
-//   console.log(`trying to create an account: ${accountName}@${domainId}`);
-//   try {
-//     console.log(`${accountName}@${domainId} has successfully been created`);
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
 
 test.onFailure(async () => {
   await Containers.logDiagnostics({ logLevel });
@@ -97,7 +63,7 @@ test(testCase, async (t: Test) => {
   });
 
   const iroha = new IrohaTestLedger({
-    containerImageVersion: "1.20a",
+    containerImageVersion: "1.20b",
     containerImageName: "hanxyz/iroha",
     rpcToriiPort: 50051,
     logLevel: "TRACE",
@@ -112,72 +78,203 @@ test(testCase, async (t: Test) => {
 
   // test the transaction
 
-  // const tearDownPostgres = async () => {
-  //   await postgres.stop();
-  //   await postgres.destroy();
-  // };
+  const tearDownPostgres = async () => {
+    await postgres.stop();
+    await postgres.destroy();
+  };
 
-  // const tearDownIroha = async () => {
-  //   await iroha.stop();
-  //   await iroha.destroy();
-  // };
+  const tearDownIroha = async () => {
+    await iroha.stop();
+    await iroha.destroy();
+  };
   //tear down Iroha first
-  // test.onFinish(tearDownIroha);
-  // test.onFinish(tearDownPostgres);
+  test.onFinish(tearDownIroha);
+  test.onFinish(tearDownPostgres);
   //start postgres first
   await postgres.start();
   await iroha.start();
-  await new Promise((resolve) => setTimeout(resolve, 10000)); //sleep for 10 seconds
-  try {
-    await commands.createAccount(commandOptions, {
-      accountName: aliceAccName, //alice@test
-      domainId: irohaDomain,
-      publicKey: alicePubKey,
-    });
-  } catch (err) {
-    throw new Error(err);
-  }
-  //tryToCreateAccount(aliceAccName, irohaDomain, alicePubKey),
-  //   const expressApp = express();
-  //   expressApp.use(bodyParser.json({ limit: "250mb" }));
-  //   const server = http.createServer(expressApp);
-  //   const listenOptions: IListenOptions = {
-  //     hostname: "0.0.0.0",
-  //     port: 0,
-  //     server,
-  //   };
-  //   const addressInfo = (await Servers.listen(listenOptions)) as AddressInfo;
-  //   test.onFinish(async () => await Servers.shutdown(server));
-  //   const { address, port } = addressInfo;
-  //   const apiHost = `http://${address}:${port}`;
-  //   t.comment(
-  //     `Metrics URL: ${apiHost}/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-iroha/get-prometheus-exporter-metrics`,
-  //   );
-  //   const apiConfig = new Configuration({ basePath: apiHost });
-  //   const apiClient = new IrohaApi(apiConfig);
-
-  //   {
-  //     const req: RunTransactionRequest = {
-  //       commandName: "createAccount",
-  //       //accountName, domainName, pubkey
-  //       params: [
-  //         "testUser",
-  //         "test",
-  //         "716fe505f69f18511a1b083915aa9ff73ef36e6688199f3959750db38b8f4bfc",
-  //       ],
-  //     };
-
-  //     const res = await apiClient.runTransactionV1(req);
-  //     console.log(res);
-  //     // t.ok(res);
-  //     // t.ok(res.data);
-  //     // t.equal(res.status, 200);
-  //   }
   t.end();
 });
 
-// test("AFTER " + testCase, async (t: Test) => {
-//   const pruning = pruneDockerAllIfGithubAction({ logLevel });
-//   await t.doesNotReject(pruning, "Pruning didn't throw OK");
+//t.ok(ledger, "ledger (PostgresTestContainer) truthy OK");
+
+// test(testCase, async (t: Test) => {
+//   const logLevel: LogLevelDesc = "TRACE";
+
+//   test.onFailure(async () => {
+//     await Containers.logDiagnostics({ logLevel });
+//   });
+
+//   const ledger = new IrohaTestLedger({
+//     emitContainerLogs: true,
+//     publishAllPorts: true,
+//     logLevel,
+//     imageName: "hyperledger/iroha",
+//     imageVersion: "1.2.0",
+//     envVars: new Map([
+//       ["IROHA_VERSION", "1.2.0"],
+//       ["CA_VERSION", "1.4.9"],
+//     ]),
+//   });
+//   t.ok(ledger, "ledger (IrohaTestLedger) truthy OK");
+
+//   const tearDownLedger = async () => {
+//     await ledger.stop();
+//     await ledger.destroy();
+//   };
+
+//   test.onFinish(tearDownLedger);
+
+//   await ledger.start();
+
+// const enrollAdminOut = await ledger.enrollAdmin();
+// const adminWallet = enrollAdminOut[1];
+// const [userIdentity] = await ledger.enrollUser(adminWallet);
+
+// const connectionProfile = await ledger.getConnectionProfileOrg1();
+
+// const sshConfig = await ledger.getSshConfig();
+
+// const keychainInstanceId = uuidv4();
+// const keychainId = uuidv4();
+// const keychainEntryKey = "user2";
+// const keychainEntryValue = JSON.stringify(userIdentity);
+
+// const keychainPlugin = new PluginKeychainMemory({
+//   instanceId: keychainInstanceId,
+//   keychainId,
+//   logLevel,
+//   backend: new Map([
+//     [keychainEntryKey, keychainEntryValue],
+//     ["some-other-entry-key", "some-other-entry-value"],
+//   ]),
+// });
+
+//const pluginRegistry = new PluginRegistry({ plugins: [keychainPlugin] });
+
+// const discoveryOptions: DiscoveryOptions = {
+//   enabled: true,
+//   asLocalhost: true,
+// };
+
+//   const pluginOptions: IPluginLedgerConnectorIrohaOptions = {
+//     instanceId: uuidv4(),
+//     pluginRegistry,
+//     sshConfig,
+//     cliContainerEnv: {},
+//     logLevel,
+//     connectionProfile,
+//     discoveryOptions,
+//     eventHandlerOptions: {
+//       strategy: DefaultEventHandlerStrategy.NetworkScopeAllfortx,
+//       commitTimeout: 300,
+//     },
+//   };
+//   const plugin = new PluginLedgerConnectorIroha(pluginOptions);
+
+//   const expressApp = express();
+//   expressApp.use(bodyParser.json({ limit: "250mb" }));
+//   const server = http.createServer(expressApp);
+//   const listenOptions: IListenOptions = {
+//     hostname: "localhost",
+//     port: 0,
+//     server,
+//   };
+//   const addressInfo = (await Servers.listen(listenOptions)) as AddressInfo;
+//   test.onFinish(async () => await Servers.shutdown(server));
+//   const { address, port } = addressInfo;
+//   const apiHost = `http://${address}:${port}`;
+//   t.comment(
+//     `Metrics URL: ${apiHost}/api/v1/plugins/@hyperledger/cactus-plugin-ledger-connector-iroha/get-prometheus-exporter-metrics`,
+//   );
+
+//   const apiConfig = new Configuration({ basePath: apiHost });
+//   const apiClient = new IrohaApi(apiConfig);
+
+//   await plugin.getOrCreateWebServices();
+//   await plugin.registerWebServices(expressApp);
+
+//   // const assetId = "asset277";
+//   // const assetOwner = uuidv4();
+
+//   // const channelName = "mychannel";
+//   // const contractName = "basic";
+//   // const signingCredential: IrohaSigningCredential = {
+//   //   keychainId,
+//   //   keychainRef: keychainEntryKey,
+//   // };
+
+//   {
+//     const res = await apiClient.runTransactionV1({
+//       signingCredential,
+//       channelName,
+//       contractName,
+//       invocationType: IrohaContractInvocationType.Call,
+//       methodName: "GetAllAssets",
+//       params: [],
+//     } as RunTransactionRequest);
+//     t.ok(res);
+//     t.ok(res.data);
+//     t.equal(res.status, 200);
+//     t.doesNotThrow(() => JSON.parse(res.data.functionOutput));
+//   }
+//   {
+//     const req: RunTransactionRequest = {
+//       commandName: "CreateAsset",
+//       params: [assetId, "yellow", "11", assetOwner, "199"],
+//     };
+
+//     const res = await apiClient.runTransactionV1(req);
+//     t.ok(res);
+//     t.ok(res.data);
+//     t.equal(res.status, 200);
+//   }
+
+//   {
+//     const res = await apiClient.runTransactionV1({
+//       signingCredential,
+//       channelName,
+//       contractName,
+//       invocationType: IrohaContractInvocationType.Call,
+//       methodName: "GetAllAssets",
+//       params: [],
+//     } as RunTransactionRequest);
+//     t.ok(res);
+//     t.ok(res.data);
+//     t.equal(res.status, 200);
+//     const assets = JSON.parse(res.data.functionOutput);
+//     const asset277 = assets.find((c: { ID: string }) => c.ID === assetId);
+//     t.ok(asset277, "Located Asset record by its ID OK");
+//     t.ok(asset277.owner, `Asset object has "owner" property OK`);
+//     t.equal(asset277.owner, assetOwner, `Asset has expected owner OK`);
+//   }
+
+//   // {
+//   //   const res = await apiClient.getPrometheusExporterMetricsV1();
+//   //   const promMetricsOutput =
+//   //     "# HELP " +
+//   //     K_CACTUS_IROHA_TOTAL_TX_COUNT +
+//   //     " Total transactions executed\n" +
+//   //     "# TYPE " +
+//   //     K_CACTUS_IROHA_TOTAL_TX_COUNT +
+//   //     " gauge\n" +
+//   //     K_CACTUS_IROHA_TOTAL_TX_COUNT +
+//   //     '{type="' +
+//   //     K_CACTUS_IROHA_TOTAL_TX_COUNT +
+//   //     '"} 3';
+//   //   t.ok(res);
+//   //   t.ok(res.data);
+//   //   t.equal(res.status, 200);
+//   //   t.true(
+//   //     res.data.includes(promMetricsOutput),
+//   //     "Total Transaction Count of 3 recorded as expected. RESULT OK",
+//   //   );
+//   // }
 //   t.end();
 // });
+
+test("AFTER " + testCase, async (t: Test) => {
+  const pruning = pruneDockerAllIfGithubAction({ logLevel });
+  await t.doesNotReject(pruning, "Pruning didn't throw OK");
+  t.end();
+});

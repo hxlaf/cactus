@@ -163,7 +163,13 @@ export class IrohaTestLedger implements ITestLedger {
           },
           PublishAllPorts: true,
           Env: this.envVars,
-          //TODO:healthcheck
+          Healthcheck: {
+            Test: ["CMD-SHELL", "netcat -z 127.0.0.1 50051 || exit 1"],
+            Interval: 1000000000, // 1 second
+            Timeout: 3000000000, // 3 seconds
+            Retries: 299,
+            StartPeriod: 3000000000, // 1 second
+          },
           HostConfig: {
             PortBindings: {
               "50051/tcp": [
@@ -194,7 +200,7 @@ export class IrohaTestLedger implements ITestLedger {
         this.container = container;
         this.containerId = container.id;
         try {
-          //await this.waitForHealthCheck();
+          await this.waitForHealthCheck();
           this.log.debug(`Healthcheck passing OK.`);
           resolve(container);
         } catch (ex) {
