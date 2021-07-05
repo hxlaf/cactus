@@ -21,7 +21,11 @@ import {
   LogLevelDesc,
   //Servers,
 } from "@hyperledger/cactus-common";
-
+import * as grpc from "grpc";
+import { CommandService_v1Client as CommandService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
+import { QueryService_v1Client as QueryService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
+import commands from "iroha-helpers-ts/lib/commands/index";
+import queries from "iroha-helpers-ts/lib/queries";
 //import { PluginKeychainMemory } from "@hyperledger/cactus-plugin-keychain-memory";
 
 // import {
@@ -40,6 +44,23 @@ import {
  * export HFC_LOGGING='{"debug":"console","info":"console"}'
  * ```
  */
+
+class IrohaCommitRes {
+  txHash!: string;
+  status!: string;
+
+  IrohaCommitRes(txHash: string, status: string) {
+    this.txHash = txHash;
+    this.status = status;
+  }
+}
+
+function setIrohaSuccessRes(res: IrohaCommitRes) {
+  let resObj = new IrohaCommitRes();
+  resObj = res;
+  console.log("sending iroha response :: %s\n", JSON.stringify(resObj));
+  return resObj;
+}
 
 const testCase = "runs tx on an Iroha v1.2.0 ledger";
 const logLevel: LogLevelDesc = "TRACE";
@@ -66,7 +87,7 @@ test(testCase, async (t: Test) => {
     containerImageVersion: "1.20b",
     containerImageName: "hanxyz/iroha",
     rpcToriiPort: 50051,
-    logLevel: "TRACE",
+    //logLevel: "TRACE",
     envVars: [
       "IROHA_POSTGRES_HOST=postgres_1",
       "IROHA_POSTGRES_PORT=5432",
@@ -75,6 +96,36 @@ test(testCase, async (t: Test) => {
       "KEY=node0",
     ],
   });
+
+  const IROHA_ADDRESS = "localhost:50051";
+
+  const adminPriv =
+    "f101537e319568c765b2cc89698325604991dca57b9716b58016b253506cab70";
+
+  const commandService = new CommandService(
+    IROHA_ADDRESS,
+    grpc.credentials.createInsecure(),
+  );
+
+  const queryService = new QueryService(
+    IROHA_ADDRESS,
+    grpc.credentials.createInsecure(),
+  );
+
+  const commandOptions = {
+    privateKeys: [adminPriv], // Array of private keys in hex format
+    creatorAccountId: "admin@test", // Account id, ex. admin@test
+    quorum: 1,
+    commandService: commandService,
+    timeoutLimit: 5000, // Set timeout limit
+  };
+
+  const queryOptions = {
+    privateKey: adminPriv,
+    creatorAccountId: "admin@test",
+    queryService: queryService,
+    timeoutLimit: 5000,
+  };
 
   // test the transaction
 
@@ -93,6 +144,50 @@ test(testCase, async (t: Test) => {
   //start postgres first
   await postgres.start();
   await iroha.start();
+  //test create Asset (add coolcoin#test; precision:3)
+  //create user
+  await commands
+    .createAccount(commandOptions, {
+      accountName: "user1",
+      domainId: "test",
+      publicKey:
+        "0000000000000000000000000000000000000000000000000000000000000000",
+    })
+    .then((res: any) => {
+      t.equal(setIrohaSuccessRes(res).status, "COMMITTED");
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+  await commands
+    .createAsset(commandOptions, {
+      assetName: "coolcoin",
+      domainId: "test",
+      precision: 3,
+    })
+    .then((res: any) => {
+      t.equal(res.status, "COMMITTED");
+      console.log("printed txHash is" + res.txHash);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+  await queries
+    .getAccount(queryOptions, { accountId: "admin@test" })
+    .then((res: any) => {
+      console.log("fetched account is" + res);
+      t.equal(res.accountId, "admin@test");
+      t.equal(res.domainId, "test");
+      t.equal(res.quorum, 1);
+    });
+  // await queries.getAssetInfo(queryOptions, {'coolcoin#test'});
+  // .then((res: unknown) => {
+  //   return console.log(res);
+  // })
+  // .catch((err: unknown) => {
+  //   return console.log(err);
+  // });
+
   t.end();
 });
 
