@@ -229,47 +229,64 @@ export class PluginLedgerConnectorIroha
       timeoutLimit: 5000,
     };
     if (req.commandName == "createAccount") {
-      await commands //create user
-        .createAccount(commandOptions, {
-          accountName: req.params[0],
-          domainId: req.params[1],
-          publicKey: req.params[2],
-        })
-        .then((res: any) => {
-          console.log(res);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+      try {
+        const response = await commands //create user
+          .createAccount(commandOptions, {
+            accountName: req.params[0],
+            domainId: req.params[1],
+            publicKey: req.params[2],
+          });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
     } else if (req.commandName == "createAsset") {
-      await commands //test create asset (coolcoin#test; precision:3)
-        .createAsset(commandOptions, {
-          assetName: "coolcoin",
-          domainId: "test",
-          precision: 3,
-        })
-        .then((res: any) => {
-          console.log("printed txHash is" + res.txHash);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+      try {
+        const response = await commands // (coolcoin#test; precision:3)
+          .createAsset(commandOptions, {
+            assetName: req.params[0],
+            domainId: req.params[1],
+            precision: req.params[2],
+          });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
     } else if (req.commandName == "createDomain") {
+      try {
+        const response = await commands.createDomain(commandOptions, {
+          domainId: req.params[0],
+          defaultRole: req.params[1],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName == "addAssetQuantity") {
+      try {
+        const response = await commands.addAssetQuantity(commandOptions, {
+          assetId: req.params[0],
+          amount: req.params[1],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName == "transferAsset") {
+      try {
+        const response = await commands.transferAsset(commandOptions, {
+          srcAccountId: req.params[0],
+          destAccountId: req.params[1],
+          assetId: req.params[2],
+          description: req.params[3],
+          amount: req.params[4],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
     }
-
     //txhelper instance of object in the iroha connector
     return { transactionReceipt: "command does not exist" };
   }
-
-  // const Tx = new TxBuilder()
-  //   .createAccount({
-  //     accountName: "user1",
-  //     domainId: "test",
-  //     publicKey:
-  //       "0000000000000000000000000000000000000000000000000000000000000000",
-  //   })
-  //   .addMeta("admin@test", 1)
-  //   .send(commandService)
-  //   .then(res => console.log(res))
-  //   .catch(err => console.error(res))
 }

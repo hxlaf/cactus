@@ -82,35 +82,6 @@ test(testCase, async (t: Test) => {
     ],
   });
 
-  // const IROHA_ADDRESS = "localhost:50051";
-
-  // const adminPriv =
-  //   "f101537e319568c765b2cc89698325604991dca57b9716b58016b253506cab70";
-
-  // const commandService = new CommandService(
-  //   IROHA_ADDRESS,
-  //   grpc.credentials.createInsecure(),
-  // );
-
-  // const queryService = new QueryService(
-  //   IROHA_ADDRESS,
-  //   grpc.credentials.createInsecure(),
-  // );
-
-  // const commandOptions = {
-  //   privateKeys: [adminPriv], // Array of private keys in hex format
-  //   creatorAccountId: "admin@test", // Account id, ex. admin@test
-  //   quorum: 1,
-  //   commandService: commandService,
-  //   timeoutLimit: 5000, // Set timeout limit
-  // };
-
-  // const queryOptions = {
-  //   privateKey: adminPriv,
-  //   creatorAccountId: "admin@test",
-  //   queryService: queryService,
-  //   timeoutLimit: 5000,
-  // };
   await postgres.start(); //start postgres first
   await iroha.start();
   // test.onFinish(async () => {
@@ -132,7 +103,7 @@ test(testCase, async (t: Test) => {
     pluginRegistry: new PluginRegistry(),
   });
 
-  connector.transact({
+  const respToCreateAccount = await connector.transact({
     commandName: "createAccount",
     params: [
       "testuser1",
@@ -140,6 +111,70 @@ test(testCase, async (t: Test) => {
       "0000000000000000000000000000000000000000000000000000000000000000",
     ],
   });
+  console.log(respToCreateAccount.transactionReceipt.txHash);
+  t.equal(respToCreateAccount.transactionReceipt.status, "COMMITTED");
+
+  const respToCreateAsset = await connector.transact({
+    commandName: "createAsset",
+    params: ["coolcoin", "test", 3],
+  });
+  console.log(respToCreateAsset.transactionReceipt.txHash);
+  t.equal(respToCreateAsset.transactionReceipt.status, "COMMITTED");
+
+  const respToCreateDomain = await connector.transact({
+    commandName: "createDomain",
+    params: ["test2", "admin"],
+  });
+  t.equal(respToCreateDomain.transactionReceipt.status, "COMMITTED");
+
+  const respToAddAsset = await connector.transact({
+    commandName: "addAssetQuantity",
+    params: ["coolcoin#test", "123.123"],
+  });
+  t.equal(respToAddAsset.transactionReceipt.status, "COMMITTED");
+
+  const responseToTransfer = await connector.transact({
+    commandName: "transferAsset",
+    params: [
+      "admin@test",
+      "testuser1@test",
+      "coolcoin#test",
+      "testTx",
+      "57.75",
+    ],
+  });
+  t.equal(responseToTransfer.transactionReceipt.status, "COMMITTED");
+
+  // const IROHA_ADDRESS = "localhost:50051";
+
+  // const adminPriv =
+  //   "f101537e319568c765b2cc89698325604991dca57b9716b58016b253506cab70";
+
+  // const commandService = new CommandService(
+  //   IROHA_ADDRESS,
+  //   grpc.credentials.createInsecure(),
+  // );
+
+  // const commandOptions = {
+  //   privateKeys: [adminPriv], // Array of private keys in hex format
+  //   creatorAccountId: "admin@test", // Account id, ex. admin@test
+  //   quorum: 1,
+  //   commandService: commandService,
+  //   timeoutLimit: 5000, // Set timeout limit
+  // };
+
+  // await commands
+  //   .transferAsset(commandOptions, {
+  //     srcAccountId: "admin@test",
+  //     destAccountId: "testuser1@test",
+  //     assetId: "coolcoin#test",
+  //     description: "testTx",
+  //     amount: "57.75",
+  //   })
+  //   .then((res) => {
+  //     console.log(res);
+  //   })
+  //   .catch((err) => console.log(err));
   t.end();
 });
 
