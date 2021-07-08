@@ -26,6 +26,17 @@ import { CommandService_v1Client as CommandService } from "iroha-helpers-ts/lib/
 import { QueryService_v1Client as QueryService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
 import commands from "iroha-helpers-ts/lib/commands/index";
 import queries from "iroha-helpers-ts/lib/queries";
+//import { PluginKeychainMemory } from "@hyperledger/cactus-plugin-keychain-memory";
+
+// import {
+//   PluginLedgerConnectorIroha,
+//   DefaultApi as IrohaApi,
+//   RunTransactionRequest,
+// } from "../../../main/typescript/public-api";
+
+//import { IPluginLedgerConnectorIrohaOptions } from "../../../main/typescript/plugin-ledger-connector-iroha";
+//import { DiscoveryOptions } from "iroha-network";
+//import { Configuration } from "@hyperledger/cactus-core-api";
 
 /**
  * Use this to debug issues with the Iroha node SDK
@@ -48,7 +59,6 @@ test("BEFORE " + testCase, async (t: Test) => {
 });
 
 test(testCase, async (t: Test) => {
-  //create postgres and iroha containers
   const postgres = new PostgresTestContainer({
     containerImageName: "postgres",
     containerImageVersion: "9.5-alpine",
@@ -69,7 +79,7 @@ test(testCase, async (t: Test) => {
       "KEY=node0",
     ],
   });
-  //init configurations (e.g., pub key)
+
   const IROHA_ADDRESS = "localhost:50051";
 
   const adminPriv =
@@ -100,25 +110,63 @@ test(testCase, async (t: Test) => {
     timeoutLimit: 5000,
   };
 
-  const tearDownPostgres = async () => {
-    await postgres.stop();
-    await postgres.destroy();
-  };
-  const tearDownIroha = async () => {
+  test.onFinish(async () => {
     await iroha.stop();
-    await iroha.destroy();
-  };
-  //tear down Iroha first
-  test.onFinish(tearDownIroha);
-  test.onFinish(tearDownPostgres);
-  //start postgres first
-  await postgres.start();
+    //await iroha.destroy();
+    await postgres.stop();
+    //await postgres.destroy();
+  });
+
+  await postgres.start(); //start postgres first
   await iroha.start();
 
-  // test transactions
-  await commands //test create user
+  // test cases
+  await queries //get the default admin user
+    .getAccount(queryOptions, { accountId: "admin@test" })
+    .then((res: any) => {
+      console.log("fetched account is" + res);
+      t.equal(res.accountId, "admin@test");
+      t.equal(res.domainId, "test");
+      t.equal(res.quorum, 1);
+    });
+
+  await queries //test roles within the system
+    .getRoles(queryOptions)
+    .then((res: any) => {
+      t.equal(res[0], "admin");
+      t.equal(res[1], "user");
+      t.equal(res[2], "money_creator");
+    })
+    .catch((err) => console.log(err));
+
+  await queries //test query Admin account's signatures
+    .getSignatories(queryOptions, { accountId: "admin@test" })
+    .then((res: any) =>
+      t.equal(
+        res[0],
+        "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
+      ),
+    )
+    .catch((err) => console.log(err));
+
+  await queries //test get role's permission returns array of integers mappings?
+    .getRolePermissions(queryOptions, { roleId: "money_creator" })
+    .then((res) => console.log(res))
+    .catch((err) => console.log(err));
+
+  await commands
+    .createDomain(commandOptions, {
+      domainId: "test2",
+      defaultRole: "admin",
+    })
+    .then((res: any) => {
+      t.equal(res.status, "COMMITTED");
+    })
+    .catch((err) => console.log(err));
+
+  await commands //create user
     .createAccount(commandOptions, {
-      accountName: "user1",
+      accountName: "testuser1",
       domainId: "test",
       publicKey:
         "0000000000000000000000000000000000000000000000000000000000000000",
@@ -129,7 +177,32 @@ test(testCase, async (t: Test) => {
     .catch((err) => {
       console.log(err);
     });
-  await commands //test create Asset (add coolcoin#test; precision:3)
+  await queries //query the created user
+    .getAccount(queryOptions, { accountId: "testuser1@test" })
+    .then((res: any) => {
+      console.log("Queried account is" + res);
+      t.equal(res.accountId, "testuser1@test");
+      t.equal(res.domainId, "test");
+      t.equal(res.quorum, 1);
+    });
+  // await commands //set quorum
+  //   .setAccountQuorum(commandOptions, {
+  //     accountId: "admin@test",
+  //     quorum: 2,
+  //   })
+  //   .then((res: any) => {
+  //     t.equal(res.quorum, 2);
+  //   });
+  // await commands  //setAccountdetail
+  //   .setAccountDetail(commandOptions, {
+  //     accountId: "testuser1@test",
+  //     key: "jason",
+  //     value: "statham",
+  //   })
+  //   .then((res: any) => {
+  //     console.log(res);
+  //   });
+  await commands //test create asset (coolcoin#test; precision:3)
     .createAsset(commandOptions, {
       assetName: "coolcoin",
       domainId: "test",
@@ -142,14 +215,75 @@ test(testCase, async (t: Test) => {
     .catch((err) => {
       console.log(err);
     });
-  await queries //verify admin account
-    .getAccount(queryOptions, { accountId: "admin@test" })
+  await queries //query coolcoin
+    .getAssetInfo(queryOptions, { assetId: "coolcoin#test" })
     .then((res: any) => {
-      console.log("fetched account is" + res);
-      // t.equal(res.accountId, "admin@test");
-      // t.equal(res.domainId, "test");
-      // t.equal(res.quorum, 1);
+      console.log(res);
+      console.log("assetid is " + res.assetId);
+      t.equal(res.assetId, "coolcoin#test");
+      t.equal(res.domainId, "test");
+      t.equal(res.precision, 3);
+    })
+    .catch((err: unknown) => {
+      return console.log(err);
     });
+  await commands
+    .addAssetQuantity(commandOptions, {
+      assetId: "coolcoin#test",
+      amount: "123.123",
+    })
+    .then((res: any) => {
+      console.log(res);
+      t.equal(res.status, "COMMITTED");
+    });
+  await queries
+    .getAccountAssets(queryOptions, {
+      accountId: "admin@test",
+      pageSize: 100,
+      firstAssetId: "coolcoin#test",
+    })
+    .then((res: any) => {
+      t.equal(res[0].balance, "123.123");
+      t.equal(res[0].assetId, "coolcoin#test");
+      t.equal(res[0].accountId, "admin@test");
+    });
+
+  await commands
+    .transferAsset(commandOptions, {
+      srcAccountId: "admin@test",
+      destAccountId: "testuser1@test",
+      assetId: "coolcoin#test",
+      description: "testTx",
+      amount: "57.75",
+    })
+    .then((res) => {
+      console.log(res);
+    })
+    .catch((err) => console.log(err));
+
+  // await queries
+  //   .getAccountAssets(queryOptions, {
+  //     accountId: "admin@test",
+  //     pageSize: 100,
+  //     firstAssetId: "coolcoin#test",
+  //   })
+  //   .then((res: any) => {
+  //     t.equal(res[0].balance, "65.373");
+  //     t.equal(res[0].assetId, "coolcoin#test");
+  //     t.equal(res[0].accountId, "admin@test");
+  //   });
+  // await commands
+  //   .subtractAssetQuantity(commandOptions, {
+  //     assetId: "coolcoin#test",
+  //     amount: "57.75",
+  //   })
+  //   .then((res: any) => {
+  //     console.log(res);
+  //     //t.equal(res.status, "COMMITTED");
+  //   })
+  //   .catch((err) => {
+  //     console.log(err);
+  //   });
 
   t.end();
 });
