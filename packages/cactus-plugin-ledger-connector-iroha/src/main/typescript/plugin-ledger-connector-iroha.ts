@@ -330,6 +330,27 @@ export class PluginLedgerConnectorIroha
       } catch (err) {
         throw new Error(err);
       }
+    } else if (req.commandName === "getAccountAssets") {
+      try {
+        const queryRes = await queries.getAccountAssets(queryOptions, {
+          accountId: req.params[0],
+          pageSize: req.params[1],
+          firstAssetId: req.params[2],
+        });
+        return { transactionReceipt: queryRes };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "addSignatory") {
+      try {
+        const response = await commands.addSignatory(commandOptions, {
+          accountId: req.params[0],
+          publicKey: req.params[1],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
     }
     //txhelper instance of object in the iroha connector
     return { transactionReceipt: "command does not exist" };

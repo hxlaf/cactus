@@ -182,6 +182,33 @@ test(testCase, async (t: Test) => {
   });
   t.equal(responseToTransfer.transactionReceipt.status, "COMMITTED");
 
+  const respToAccAsset = await connector.transact({
+    commandName: "getAccountAssets",
+    params: ["admin@test", 100, "coolcoin#test"],
+  });
+  console.log(respToAccAsset);
+  t.equal(respToAccAsset.transactionReceipt[0].assetId, "coolcoin#test");
+  t.equal(respToAccAsset.transactionReceipt[0].accountId, "admin@test");
+  t.equal(respToAccAsset.transactionReceipt[0].balance, "65.373");
+
+  const respToAccAsset2 = await connector.transact({
+    commandName: "getAccountAssets",
+    params: ["user1@test", 100, "coolcoin#test"],
+  });
+  console.log(respToAccAsset2);
+  t.equal(respToAccAsset2.transactionReceipt[0].assetId, "coolcoin#test");
+  t.equal(respToAccAsset2.transactionReceipt[0].accountId, "user1@test");
+  t.equal(respToAccAsset2.transactionReceipt[0].balance, "57.75");
+
+  // const respToAddSign = await connector.transact({
+  //   commandName: "addSignatory",
+  //   params: [
+  //     "user1@test",
+  //     "0000000000000000000000000000000000000000000000000000000000000001",
+  //   ],
+  // });
+  // console.log(respToAddSign);
+
   // const IROHA_ADDRESS = "localhost:50051";
 
   // const adminPriv =
