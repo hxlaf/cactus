@@ -5,6 +5,7 @@ import { CommandService_v1Client as CommandService } from "iroha-helpers-ts/lib/
 import { QueryService_v1Client as QueryService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
 import commands from "iroha-helpers-ts/lib/commands/index";
 import queries from "iroha-helpers-ts/lib/queries";
+//import RolePermission from "iroha-helpers-ts/lib/proto/primitive_pb";
 //import type { Server as SocketIoServer } from "socket.io";
 //import type { Socket as SocketIoSocket } from "socket.io";
 import type { Express } from "express";
@@ -351,8 +352,96 @@ export class PluginLedgerConnectorIroha
       } catch (err) {
         throw new Error(err);
       }
+    } else if (req.commandName === "getRoles") {
+      try {
+        const response = await queries.getRoles(queryOptions);
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "createRole") {
+      //Need to test
+      try {
+        const response = await commands.createRole(commandOptions, {
+          roleName: req.params[0],
+          permissionsList: req.params[1],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "appendRole") {
+      //Need to test
+      try {
+        const response = await commands.appendRole(commandOptions, {
+          accountId: req.params[0],
+          roleName: req.params[1],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "getRolePermissions") {
+      try {
+        const response = await queries.getRolePermissions(queryOptions, {
+          roleId: req.params[0],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "grantPermission") {
+      //need to fix
+      try {
+        const response = await commands.grantPermission(commandOptions, {
+          accountId: req.params[0],
+          permission: "CAN_SET_QUORUM",
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "getTransactions") {
+      //need to check with testing
+      try {
+        // {txHashesList!: Array<string>;}
+        const response = await queries.getTransactions(queryOptions, {
+          txHashesList: req.params[0],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "getAccountTransactions") {
+      //need to check with testing
+      try {
+        const response = await queries.getAccountTransactions(queryOptions, {
+          accountId: req.params[0],
+          pageSize: req.params[1],
+          firstTxHash: req.params[2],
+        });
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "getAccountAssetTransactions") {
+      //need to check with testing
+      try {
+        const response = await queries.getAccountAssetTransactions(
+          queryOptions,
+          {
+            accountId: req.params[0],
+            assetId: req.params[1],
+            pageSize: req.params[2],
+            firstTxHash: req.params[3],
+          },
+        );
+        return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
     }
-    //txhelper instance of object in the iroha connector
+
     return { transactionReceipt: "command does not exist" };
   }
 }

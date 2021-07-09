@@ -181,6 +181,7 @@ test(testCase, async (t: Test) => {
     params: ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
   });
   t.equal(responseToTransfer.transactionReceipt.status, "COMMITTED");
+  const firstTxHash = responseToTransfer.transactionReceipt.txHash;
 
   const respToAccAsset = await connector.transact({
     commandName: "getAccountAssets",
@@ -200,6 +201,78 @@ test(testCase, async (t: Test) => {
   t.equal(respToAccAsset2.transactionReceipt[0].accountId, "user1@test");
   t.equal(respToAccAsset2.transactionReceipt[0].balance, "57.75");
 
+  const respToGetRoles = await connector.transact({
+    commandName: "getRoles",
+    params: [],
+  });
+  console.log(respToGetRoles);
+  t.equal(respToGetRoles.transactionReceipt[0], "admin");
+  t.equal(respToGetRoles.transactionReceipt[1], "user");
+  t.equal(respToGetRoles.transactionReceipt[2], "money_creator");
+
+  const respToGetRolePermission = await connector.transact({
+    commandName: "getRolePermissions",
+    params: ["user"],
+  });
+  console.log(respToGetRolePermission);
+  const testArr = [
+    6,
+    7,
+    8,
+    12,
+    13,
+    17,
+    20,
+    23,
+    26,
+    29,
+    32,
+    35,
+    37,
+    38,
+    39,
+    40,
+    41,
+  ];
+  for (let i = 0; i < testArr.length; i++) {
+    t.equal(respToGetRolePermission.transactionReceipt[i], testArr[i]);
+  }
+
+  const respToGetAccTx = await connector.transact({
+    commandName: "getAccountTransactions",
+    params: ["admin@test", 100, firstTxHash],
+  });
+  console.log(respToGetAccTx);
+
+  const respToGetAccAssetTx = await connector.transact({
+    commandName: "getAccountAssetTransactions",
+    params: ["admin@test", "coolcoin#test", 100, firstTxHash],
+  });
+  console.log(respToGetAccAssetTx);
+
+  const respToGetTx = await connector.transact({
+    commandName: "getTransactions",
+    params: [[firstTxHash]],
+  });
+  console.log(respToGetTx);
+
+  // const respToGrantPermissions = await connector.transact({
+  //   commandName: "grantPermission",
+  //   params: ["user1@test", testArr],
+  // });
+  // console.log(respToGrantPermissions);
+
+  // const respToCreateRole = await connector.transact({
+  //   commandName: "createRole",
+  //   params: ["testrole", testArr],
+  // });
+  // console.log(respToCreateRole);
+
+  // const respToAppendRole = await connector.transact({
+  //   commandName: "appendRole",
+  //   params: ["user1@test", "money_creator"],
+  // });
+  // console.log(respToAppendRole);
   // const respToAddSign = await connector.transact({
   //   commandName: "addSignatory",
   //   params: [
@@ -209,36 +282,6 @@ test(testCase, async (t: Test) => {
   // });
   // console.log(respToAddSign);
 
-  // const IROHA_ADDRESS = "localhost:50051";
-
-  // const adminPriv =
-  //   "f101537e319568c765b2cc89698325604991dca57b9716b58016b253506cab70";
-
-  // const commandService = new CommandService(
-  //   IROHA_ADDRESS,
-  //   grpc.credentials.createInsecure(),
-  // );
-
-  // const commandOptions = {
-  //   privateKeys: [adminPriv], // Array of private keys in hex format
-  //   creatorAccountId: "admin@test", // Account id, ex. admin@test
-  //   quorum: 1,
-  //   commandService: commandService,
-  //   timeoutLimit: 5000, // Set timeout limit
-  // };
-
-  // await commands
-  //   .transferAsset(commandOptions, {
-  //     srcAccountId: "admin@test",
-  //     destAccountId: "testuser1@test",
-  //     assetId: "coolcoin#test",
-  //     description: "testTx",
-  //     amount: "57.75",
-  //   })
-  //   .then((res) => {
-  //     console.log(res);
-  //   })
-  //   .catch((err) => console.log(err));
   t.end();
 });
 
