@@ -1,10 +1,10 @@
 import { Server } from "http";
 import * as grpc from "grpc";
 import { Server as SecureServer } from "https";
-//import { txHelper, CreateAccount, Transaction } from "iroha-helpers";
 import { CommandService_v1Client as CommandService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
+import { QueryService_v1Client as QueryService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
 import commands from "iroha-helpers-ts/lib/commands/index";
-
+import queries from "iroha-helpers-ts/lib/queries";
 //import type { Server as SocketIoServer } from "socket.io";
 //import type { Socket as SocketIoSocket } from "socket.io";
 import type { Express } from "express";
@@ -219,8 +219,10 @@ export class PluginLedgerConnectorIroha
       "localhost:50051",
       grpc.credentials.createInsecure(),
     );
-    console.log(req.commandName);
-    console.log(req.params);
+    const queryService = new QueryService(
+      "localhost:50051",
+      grpc.credentials.createInsecure(),
+    );
     const commandOptions = {
       privateKeys: [adminPriv],
       creatorAccountId: "admin@test",
@@ -228,7 +230,14 @@ export class PluginLedgerConnectorIroha
       commandService: commandService,
       timeoutLimit: 5000,
     };
-    if (req.commandName == "createAccount") {
+    const queryOptions = {
+      privateKey: adminPriv,
+      creatorAccountId: "admin@test",
+      queryService: queryService,
+      timeoutLimit: 5000,
+    };
+    console.log(req);
+    if (req.commandName === "createAccount") {
       try {
         const response = await commands //create user
           .createAccount(commandOptions, {
@@ -240,7 +249,7 @@ export class PluginLedgerConnectorIroha
       } catch (err) {
         throw new Error(err);
       }
-    } else if (req.commandName == "createAsset") {
+    } else if (req.commandName === "createAsset") {
       try {
         const response = await commands // (coolcoin#test; precision:3)
           .createAsset(commandOptions, {
@@ -252,7 +261,7 @@ export class PluginLedgerConnectorIroha
       } catch (err) {
         throw new Error(err);
       }
-    } else if (req.commandName == "createDomain") {
+    } else if (req.commandName === "createDomain") {
       try {
         const response = await commands.createDomain(commandOptions, {
           domainId: req.params[0],
@@ -262,7 +271,7 @@ export class PluginLedgerConnectorIroha
       } catch (err) {
         throw new Error(err);
       }
-    } else if (req.commandName == "addAssetQuantity") {
+    } else if (req.commandName === "addAssetQuantity") {
       try {
         const response = await commands.addAssetQuantity(commandOptions, {
           assetId: req.params[0],
@@ -272,7 +281,7 @@ export class PluginLedgerConnectorIroha
       } catch (err) {
         throw new Error(err);
       }
-    } else if (req.commandName == "transferAsset") {
+    } else if (req.commandName === "transferAsset") {
       try {
         const response = await commands.transferAsset(commandOptions, {
           srcAccountId: req.params[0],
@@ -282,6 +291,42 @@ export class PluginLedgerConnectorIroha
           amount: req.params[4],
         });
         return { transactionReceipt: response };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "getSignatories") {
+      try {
+        const queryRes = await queries.getSignatories(queryOptions, {
+          accountId: req.params[0],
+        });
+        return { transactionReceipt: queryRes };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "getAccount") {
+      try {
+        const queryRes = await queries.getAccount(queryOptions, {
+          accountId: req.params[0],
+        });
+        return { transactionReceipt: queryRes };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "getRawAccount") {
+      try {
+        const queryRes = await queries.getRawAccount(queryOptions, {
+          accountId: req.params[0],
+        });
+        return { transactionReceipt: queryRes };
+      } catch (err) {
+        throw new Error(err);
+      }
+    } else if (req.commandName === "getAssetInfo") {
+      try {
+        const queryRes = await queries.getAssetInfo(queryOptions, {
+          assetId: req.params[0],
+        });
+        return { transactionReceipt: queryRes };
       } catch (err) {
         throw new Error(err);
       }

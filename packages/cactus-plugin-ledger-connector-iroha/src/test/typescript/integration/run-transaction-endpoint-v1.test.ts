@@ -84,12 +84,12 @@ test(testCase, async (t: Test) => {
 
   await postgres.start(); //start postgres first
   await iroha.start();
-  // test.onFinish(async () => {
-  //   await iroha.stop();
-  //   //await iroha.destroy();
-  //   await postgres.stop();
-  //   //await postgres.destroy();
-  // });
+  test.onFinish(async () => {
+    await iroha.stop();
+    //await iroha.destroy();
+    await postgres.stop();
+    //await postgres.destroy();
+  });
 
   const rpcToriiPortHost = await iroha.getRpcToriiPortHost();
   const factory = new PluginFactoryLedgerConnector({
@@ -103,16 +103,56 @@ test(testCase, async (t: Test) => {
     pluginRegistry: new PluginRegistry(),
   });
 
+  const respToCreateDomain = await connector.transact({
+    commandName: "createDomain",
+    params: ["test2", "admin"],
+  });
+  t.equal(respToCreateDomain.transactionReceipt.status, "COMMITTED");
+
+  const respQuerySign = await connector.transact({
+    commandName: "getSignatories",
+    params: ["admin@test"],
+  });
+  console.log(respQuerySign);
+  t.equal(
+    respQuerySign.transactionReceipt[0],
+    "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
+  );
+
   const respToCreateAccount = await connector.transact({
     commandName: "createAccount",
     params: [
-      "testuser1",
+      "user1",
       "test",
       "0000000000000000000000000000000000000000000000000000000000000000",
     ],
   });
   console.log(respToCreateAccount.transactionReceipt.txHash);
   t.equal(respToCreateAccount.transactionReceipt.status, "COMMITTED");
+
+  const respToGetAcc = await connector.transact({
+    commandName: "getAccount",
+    params: ["admin@test"],
+  });
+  console.log(respToGetAcc);
+  t.equal(respToGetAcc.transactionReceipt.accountId, "admin@test");
+  t.equal(respToGetAcc.transactionReceipt.domainId, "test");
+  t.equal(respToGetAcc.transactionReceipt.quorum, 1);
+
+  const respToGetAcc2 = await connector.transact({
+    commandName: "getAccount",
+    params: ["user1@test"],
+  });
+  console.log(respToGetAcc2);
+  t.equal(respToGetAcc2.transactionReceipt.accountId, "user1@test");
+  t.equal(respToGetAcc2.transactionReceipt.domainId, "test");
+  t.equal(respToGetAcc2.transactionReceipt.quorum, 1);
+
+  const respToGetRawAcc = await connector.transact({
+    commandName: "getRawAccount",
+    params: ["user1@test"],
+  });
+  console.log(respToGetRawAcc);
 
   const respToCreateAsset = await connector.transact({
     commandName: "createAsset",
@@ -121,11 +161,14 @@ test(testCase, async (t: Test) => {
   console.log(respToCreateAsset.transactionReceipt.txHash);
   t.equal(respToCreateAsset.transactionReceipt.status, "COMMITTED");
 
-  const respToCreateDomain = await connector.transact({
-    commandName: "createDomain",
-    params: ["test2", "admin"],
+  const respToGetAssetInfo = await connector.transact({
+    commandName: "getAssetInfo",
+    params: ["coolcoin#test"],
   });
-  t.equal(respToCreateDomain.transactionReceipt.status, "COMMITTED");
+  console.log(respToGetAssetInfo);
+  t.equal(respToGetAssetInfo.transactionReceipt.assetId, "coolcoin#test");
+  t.equal(respToGetAssetInfo.transactionReceipt.domainId, "test");
+  t.equal(respToGetAssetInfo.transactionReceipt.precision, 3);
 
   const respToAddAsset = await connector.transact({
     commandName: "addAssetQuantity",
@@ -135,13 +178,7 @@ test(testCase, async (t: Test) => {
 
   const responseToTransfer = await connector.transact({
     commandName: "transferAsset",
-    params: [
-      "admin@test",
-      "testuser1@test",
-      "coolcoin#test",
-      "testTx",
-      "57.75",
-    ],
+    params: ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
   });
   t.equal(responseToTransfer.transactionReceipt.status, "COMMITTED");
 
