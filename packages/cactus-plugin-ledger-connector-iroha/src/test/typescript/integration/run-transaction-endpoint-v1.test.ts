@@ -69,7 +69,7 @@ test(testCase, async (t: Test) => {
   });
 
   const iroha = new IrohaTestLedger({
-    containerImageVersion: "1.20b",
+    containerImageVersion: "1.20c",
     containerImageName: "hanxyz/iroha",
     rpcToriiPort: 50051,
     //logLevel: "TRACE",
@@ -201,14 +201,31 @@ test(testCase, async (t: Test) => {
   t.equal(respToAccAsset2.transactionReceipt[0].accountId, "user1@test");
   t.equal(respToAccAsset2.transactionReceipt[0].balance, "57.75");
 
+  const respToSubAsset = await connector.transact({
+    commandName: "subtractAssetQuantity",
+    params: ["coolcoin#test", "30.123"],
+  });
+  t.equal(respToSubAsset.transactionReceipt.status, "COMMITTED");
+  t.equal(respToAccAsset.transactionReceipt[0].assetId, "coolcoin#test");
+  t.equal(respToAccAsset.transactionReceipt[0].accountId, "admin@test");
+  t.equal(respToAccAsset.transactionReceipt[0].balance, "35.250");
+
+  const respToAccAsset3 = await connector.transact({
+    commandName: "getAccountAssets",
+    params: ["admin@test", 100, "coolcoin#test"],
+  });
+  console.log(respToAccAsset3);
+
   const respToGetRoles = await connector.transact({
     commandName: "getRoles",
     params: [],
   });
   console.log(respToGetRoles);
-  t.equal(respToGetRoles.transactionReceipt[0], "admin");
-  t.equal(respToGetRoles.transactionReceipt[1], "user");
-  t.equal(respToGetRoles.transactionReceipt[2], "money_creator");
+  t.equal(respToGetRoles.transactionReceipt[0], "cactus_test");
+  t.equal(respToGetRoles.transactionReceipt[1], "cactus_test_full");
+  t.equal(respToGetRoles.transactionReceipt[2], "admin");
+  t.equal(respToGetRoles.transactionReceipt[3], "user");
+  t.equal(respToGetRoles.transactionReceipt[4], "money_creator");
 
   const respToGetRolePermission = await connector.transact({
     commandName: "getRolePermissions",
@@ -255,6 +272,12 @@ test(testCase, async (t: Test) => {
     params: [[firstTxHash]],
   });
   console.log(respToGetTx);
+
+  // const respToRevoke = await connector.transact({
+  //   commandName: "revokePermission",
+  //   params: ["user1@test", [6]],
+  // });
+  // console.log(respToRevoke);
 
   // const respToGrantPermissions = await connector.transact({
   //   commandName: "grantPermission",

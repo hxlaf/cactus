@@ -238,210 +238,258 @@ export class PluginLedgerConnectorIroha
       timeoutLimit: 5000,
     };
     console.log(req);
-    if (req.commandName === "createAccount") {
-      try {
-        const response = await commands //create user
-          .createAccount(commandOptions, {
-            accountName: req.params[0],
-            domainId: req.params[1],
-            publicKey: req.params[2],
+
+    switch (req.commandName) {
+      case "createAccount": {
+        try {
+          const response = await commands //create user
+            .createAccount(commandOptions, {
+              accountName: req.params[0],
+              domainId: req.params[1],
+              publicKey: req.params[2],
+            });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "createAsset": {
+        try {
+          const response = await commands // (coolcoin#test; precision:3)
+            .createAsset(commandOptions, {
+              assetName: req.params[0],
+              domainId: req.params[1],
+              precision: req.params[2],
+            });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "createDomain": {
+        try {
+          const response = await commands.createDomain(commandOptions, {
+            domainId: req.params[0],
+            defaultRole: req.params[1],
           });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
       }
-    } else if (req.commandName === "createAsset") {
-      try {
-        const response = await commands // (coolcoin#test; precision:3)
-          .createAsset(commandOptions, {
-            assetName: req.params[0],
-            domainId: req.params[1],
-            precision: req.params[2],
+      case "addAssetQuantity": {
+        try {
+          const response = await commands.addAssetQuantity(commandOptions, {
+            assetId: req.params[0],
+            amount: req.params[1],
           });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
       }
-    } else if (req.commandName === "createDomain") {
-      try {
-        const response = await commands.createDomain(commandOptions, {
-          domainId: req.params[0],
-          defaultRole: req.params[1],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
+      case "subtractAssetQuantity": {
+        try {
+          const response = await commands.subtractAssetQuantity(
+            commandOptions,
+            {
+              assetId: req.params[0],
+              amount: req.params[1],
+            },
+          );
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
       }
-    } else if (req.commandName === "addAssetQuantity") {
-      try {
-        const response = await commands.addAssetQuantity(commandOptions, {
-          assetId: req.params[0],
-          amount: req.params[1],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
+      case "transferAsset": {
+        try {
+          const response = await commands.transferAsset(commandOptions, {
+            srcAccountId: req.params[0],
+            destAccountId: req.params[1],
+            assetId: req.params[2],
+            description: req.params[3],
+            amount: req.params[4],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
       }
-    } else if (req.commandName === "transferAsset") {
-      try {
-        const response = await commands.transferAsset(commandOptions, {
-          srcAccountId: req.params[0],
-          destAccountId: req.params[1],
-          assetId: req.params[2],
-          description: req.params[3],
-          amount: req.params[4],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getSignatories") {
-      try {
-        const queryRes = await queries.getSignatories(queryOptions, {
-          accountId: req.params[0],
-        });
-        return { transactionReceipt: queryRes };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getAccount") {
-      try {
-        const queryRes = await queries.getAccount(queryOptions, {
-          accountId: req.params[0],
-        });
-        return { transactionReceipt: queryRes };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getRawAccount") {
-      try {
-        const queryRes = await queries.getRawAccount(queryOptions, {
-          accountId: req.params[0],
-        });
-        return { transactionReceipt: queryRes };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getAssetInfo") {
-      try {
-        const queryRes = await queries.getAssetInfo(queryOptions, {
-          assetId: req.params[0],
-        });
-        return { transactionReceipt: queryRes };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getAccountAssets") {
-      try {
-        const queryRes = await queries.getAccountAssets(queryOptions, {
-          accountId: req.params[0],
-          pageSize: req.params[1],
-          firstAssetId: req.params[2],
-        });
-        return { transactionReceipt: queryRes };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "addSignatory") {
-      try {
-        const response = await commands.addSignatory(commandOptions, {
-          accountId: req.params[0],
-          publicKey: req.params[1],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getRoles") {
-      try {
-        const response = await queries.getRoles(queryOptions);
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "createRole") {
-      //Need to test
-      try {
-        const response = await commands.createRole(commandOptions, {
-          roleName: req.params[0],
-          permissionsList: req.params[1],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "appendRole") {
-      //Need to test
-      try {
-        const response = await commands.appendRole(commandOptions, {
-          accountId: req.params[0],
-          roleName: req.params[1],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getRolePermissions") {
-      try {
-        const response = await queries.getRolePermissions(queryOptions, {
-          roleId: req.params[0],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "grantPermission") {
-      //need to fix
-      try {
-        const response = await commands.grantPermission(commandOptions, {
-          accountId: req.params[0],
-          permission: "CAN_SET_QUORUM",
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getTransactions") {
-      //need to check with testing
-      try {
-        // {txHashesList!: Array<string>;}
-        const response = await queries.getTransactions(queryOptions, {
-          txHashesList: req.params[0],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getAccountTransactions") {
-      //need to check with testing
-      try {
-        const response = await queries.getAccountTransactions(queryOptions, {
-          accountId: req.params[0],
-          pageSize: req.params[1],
-          firstTxHash: req.params[2],
-        });
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
-      }
-    } else if (req.commandName === "getAccountAssetTransactions") {
-      //need to check with testing
-      try {
-        const response = await queries.getAccountAssetTransactions(
-          queryOptions,
-          {
+      case "getSignatories": {
+        try {
+          const queryRes = await queries.getSignatories(queryOptions, {
             accountId: req.params[0],
-            assetId: req.params[1],
-            pageSize: req.params[2],
-            firstTxHash: req.params[3],
-          },
-        );
-        return { transactionReceipt: response };
-      } catch (err) {
-        throw new Error(err);
+          });
+          return { transactionReceipt: queryRes };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getAccount": {
+        try {
+          const queryRes = await queries.getAccount(queryOptions, {
+            accountId: req.params[0],
+          });
+          return { transactionReceipt: queryRes };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getRawAccount": {
+        try {
+          const queryRes = await queries.getRawAccount(queryOptions, {
+            accountId: req.params[0],
+          });
+          return { transactionReceipt: queryRes };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getAssetInfo": {
+        try {
+          const queryRes = await queries.getAssetInfo(queryOptions, {
+            assetId: req.params[0],
+          });
+          return { transactionReceipt: queryRes };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getAccountAssets": {
+        try {
+          const queryRes = await queries.getAccountAssets(queryOptions, {
+            accountId: req.params[0],
+            pageSize: req.params[1],
+            firstAssetId: req.params[2],
+          });
+          return { transactionReceipt: queryRes };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "addSignatory": {
+        try {
+          const response = await commands.addSignatory(commandOptions, {
+            accountId: req.params[0],
+            publicKey: req.params[1],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getRoles": {
+        try {
+          const response = await queries.getRoles(queryOptions);
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "createRole": {
+        //Need to test
+        try {
+          const response = await commands.createRole(commandOptions, {
+            roleName: req.params[0],
+            permissionsList: req.params[1],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "appendRole": {
+        //Need to test
+        try {
+          const response = await commands.appendRole(commandOptions, {
+            accountId: req.params[0],
+            roleName: req.params[1],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getRolePermissions": {
+        try {
+          const response = await queries.getRolePermissions(queryOptions, {
+            roleId: req.params[0],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "grantPermission": {
+        //need to fix
+        try {
+          const response = await commands.grantPermission(commandOptions, {
+            accountId: req.params[0],
+            permission: "CAN_SET_QUORUM",
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "revokePermission": {
+        //need to fix
+        try {
+          const response = await commands.revokePermission(commandOptions, {
+            accountId: req.params[0],
+            permission: req.params[1],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getTransactions": {
+        //output hard to test
+        try {
+          // {txHashesList!: Array<string>;}
+          const response = await queries.getTransactions(queryOptions, {
+            txHashesList: req.params[0],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getAccountTransactions": {
+        //output hard to test
+        try {
+          const response = await queries.getAccountTransactions(queryOptions, {
+            accountId: req.params[0],
+            pageSize: req.params[1],
+            firstTxHash: req.params[2],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "getAccountAssetTransactions": {
+        //output hard to test
+        try {
+          const response = await queries.getAccountAssetTransactions(
+            queryOptions,
+            {
+              accountId: req.params[0],
+              assetId: req.params[1],
+              pageSize: req.params[2],
+              firstTxHash: req.params[3],
+            },
+          );
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      default: {
+        return { transactionReceipt: "command does not exist" };
       }
     }
-
-    return { transactionReceipt: "command does not exist" };
   }
 }
