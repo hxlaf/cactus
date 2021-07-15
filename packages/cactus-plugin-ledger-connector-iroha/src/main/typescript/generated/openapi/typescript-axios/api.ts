@@ -202,6 +202,74 @@ export enum IrohaCommand {
 /**
  * 
  * @export
+ * @enum {string}
+ */
+export enum IrohaQuery {
+    /**
+    * To get the state of an account
+    */
+    GetAccount = 'getAccount',
+    /**
+    * To get details of the account.
+    */
+    GetAccountDetail = 'getAccountDetail',
+    /**
+    * To get information on the given asset (as for now - its precision).
+    */
+    GetAssetInfo = 'getAssetInfo',
+    /**
+    * To get the state of all assets in an account (a balance).
+    */
+    GetAccountAssets = 'getAccountAssets',
+    /**
+    * To retrieve information about transactions, based on their hashes.
+    */
+    GetTransactions = 'getTransactions',
+    /**
+    * To retrieve a list of pending (not fully signed) multisignature transactions or batches of transactions issued by account of query creator.
+    */
+    GetPendingTransactions = 'getPendingTransactions',
+    /**
+    * To retrieve a list of transactions per account.
+    */
+    GetAccountTransactions = 'getAccountTransactions',
+    /**
+    * To retrieve all transactions associated with given account and asset.
+    */
+    GetAccountAssetTransactions = 'getAccountAssetTransactions',
+    /**
+    * To get existing roles in the system.
+    */
+    GetRoles = 'getRoles',
+    /**
+    * To get signatories, which act as an identity of the account.
+    */
+    GetSignatories = 'getSignatories',
+    /**
+    * To get available permissions per role in the system.
+    */
+    GetRolePermissions = 'getRolePermissions',
+    /**
+    * To get a specific block, using its height as an identifier.
+    */
+    GetBlock = 'getBlock',
+    /**
+    * To retrieve a receipt of a CallEngine command. Allows to access the event log created during computations inside the EVM.
+    */
+    GetEngineReceipts = 'getEngineReceipts',
+    /**
+    * To get new blocks as soon as they are committed, a user can invoke FetchCommits RPC call to Iroha network.
+    */
+    FetchCommits = 'fetchCommits',
+    /**
+    * A query that returns a list of peers in Iroha network.
+    */
+    GetPeers = 'getPeers'
+}
+
+/**
+ * 
+ * @export
  * @interface RunTransactionRequest
  */
 export interface RunTransactionRequest {

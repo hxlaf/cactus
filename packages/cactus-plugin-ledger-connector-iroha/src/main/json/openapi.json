@@ -94,6 +94,60 @@
           "RemovePeer"
         ]
       },
+      "IrohaQuery": {
+        "type": "string",
+        "enum": [
+          "getAccount",
+          "getAccountDetail",
+          "getAssetInfo",
+          "getAccountAssets",
+          "getTransactions",
+          "getPendingTransactions",
+          "getAccountTransactions",
+          "getAccountAssetTransactions",
+          "getRoles",
+          "getSignatories",
+          "getRolePermissions",
+          "getBlock",
+          "getEngineReceipts",
+          "fetchCommits",
+          "getPeers"
+        ],
+        "x-enum-descriptions": [
+          "To get the state of an account",
+          "To get details of the account.",
+          "To get information on the given asset (as for now - its precision).",
+          "To get the state of all assets in an account (a balance).",
+          "To retrieve information about transactions, based on their hashes.",
+          "To retrieve a list of pending (not fully signed) multisignature transactions or batches of transactions issued by account of query creator.",
+          "To retrieve a list of transactions per account.",
+          "To retrieve all transactions associated with given account and asset.",
+          "To get existing roles in the system.",
+          "To get signatories, which act as an identity of the account.",
+          "To get available permissions per role in the system.",
+          "To get a specific block, using its height as an identifier.",
+          "To retrieve a receipt of a CallEngine command. Allows to access the event log created during computations inside the EVM.",
+          "To get new blocks as soon as they are committed, a user can invoke FetchCommits RPC call to Iroha network.",
+          "A query that returns a list of peers in Iroha network."
+        ],
+        "x-enum-varnames": [
+          "GetAccount",
+          "GetAccountDetail",
+          "GetAssetInfo",
+          "GetAccountAssets",
+          "GetTransactions",
+          "GetPendingTransactions",
+          "GetAccountTransactions",
+          "GetAccountAssetTransactions",
+          "GetRoles",
+          "GetSignatories",
+          "GetRolePermissions",
+          "GetBlock",
+          "GetEngineReceipts",
+          "FetchCommits",
+          "GetPeers"
+        ]
+      },
       "RunTransactionRequest": {
         "type": "object",
         "required": ["commandName", "params"],

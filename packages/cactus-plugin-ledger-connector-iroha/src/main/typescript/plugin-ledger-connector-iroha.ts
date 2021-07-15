@@ -38,6 +38,7 @@ import {
 
 import {
   IrohaCommand,
+  IrohaQuery,
   // InvokeContractV1Request,
   // InvokeContractV1Response,
   RunTransactionRequest,
@@ -240,8 +241,6 @@ export class PluginLedgerConnectorIroha
     };
     console.log(req);
 
-    //enum
-
     switch (req.commandName) {
       case IrohaCommand.CreateAccount: {
         try {
@@ -330,7 +329,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getSignatories": {
+      case IrohaQuery.GetSignatories: {
         try {
           const queryRes = await queries.getSignatories(queryOptions, {
             accountId: req.params[0],
@@ -340,7 +339,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getAccount": {
+      case IrohaQuery.GetAccount: {
         try {
           const queryRes = await queries.getAccount(queryOptions, {
             accountId: req.params[0],
@@ -350,17 +349,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getRawAccount": {
-        try {
-          const queryRes = await queries.getRawAccount(queryOptions, {
-            accountId: req.params[0],
-          });
-          return { transactionReceipt: queryRes };
-        } catch (err) {
-          throw new Error(err);
-        }
-      }
-      case "getAssetInfo": {
+      case IrohaQuery.GetAssetInfo: {
         try {
           const queryRes = await queries.getAssetInfo(queryOptions, {
             assetId: req.params[0],
@@ -370,7 +359,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getAccountAssets": {
+      case IrohaQuery.GetAccountAssets: {
         try {
           const queryRes = await queries.getAccountAssets(queryOptions, {
             accountId: req.params[0],
@@ -404,7 +393,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getRoles": {
+      case IrohaQuery.GetRoles: {
         try {
           const response = await queries.getRoles(queryOptions);
           return { transactionReceipt: response };
@@ -436,7 +425,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getRolePermissions": {
+      case IrohaQuery.GetRolePermissions: {
         try {
           const response = await queries.getRolePermissions(queryOptions, {
             roleId: req.params[0],
@@ -470,7 +459,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getTransactions": {
+      case IrohaQuery.GetTransactions: {
         //output hard to test
         try {
           // {txHashesList!: Array<string>;}
@@ -482,7 +471,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getAccountTransactions": {
+      case IrohaQuery.GetAccountTransactions: {
         //output hard to test
         try {
           const response = await queries.getAccountTransactions(queryOptions, {
@@ -495,7 +484,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "getAccountAssetTransactions": {
+      case IrohaQuery.GetAccountAssetTransactions: {
         //output hard to test
         try {
           const response = await queries.getAccountAssetTransactions(
