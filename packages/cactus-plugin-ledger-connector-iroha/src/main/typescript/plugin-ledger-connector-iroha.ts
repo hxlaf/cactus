@@ -37,6 +37,7 @@ import {
 } from "@hyperledger/cactus-common";
 
 import {
+  IrohaCommand,
   // InvokeContractV1Request,
   // InvokeContractV1Response,
   RunTransactionRequest,
@@ -242,8 +243,7 @@ export class PluginLedgerConnectorIroha
     //enum
 
     switch (req.commandName) {
-      case "createAccount": {
-        //IrohaCommand.CreateAccount
+      case IrohaCommand.CreateAccount: {
         try {
           const response = await commands //create user
             .createAccount(commandOptions, {
@@ -256,7 +256,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "createAsset": {
+      case IrohaCommand.CreateAsset: {
         try {
           const response = await commands // (coolcoin#test; precision:3)
             .createAsset(commandOptions, {
@@ -269,7 +269,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "createDomain": {
+      case IrohaCommand.CreateDomain: {
         try {
           const response = await commands.createDomain(commandOptions, {
             domainId: req.params[0],
@@ -280,7 +280,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "setAccountQuorum": {
+      case IrohaCommand.SetAccountQuorum: {
         try {
           const response = await commands.setAccountQuorum(commandOptions, {
             accountId: req.params[0],
@@ -291,7 +291,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "addAssetQuantity": {
+      case IrohaCommand.AddAssetQuantity: {
         try {
           const response = await commands.addAssetQuantity(commandOptions, {
             assetId: req.params[0],
@@ -302,7 +302,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "subtractAssetQuantity": {
+      case IrohaCommand.SubtractAssetQuantity: {
         try {
           const response = await commands.subtractAssetQuantity(
             commandOptions,
@@ -316,7 +316,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "transferAsset": {
+      case IrohaCommand.TransferAsset: {
         try {
           const response = await commands.transferAsset(commandOptions, {
             srcAccountId: req.params[0],
@@ -382,7 +382,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "addSignatory": {
+      case IrohaCommand.AddSignatory: {
         try {
           const response = await commands.addSignatory(commandOptions, {
             accountId: req.params[0],
@@ -393,7 +393,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "removeSignatory": {
+      case IrohaCommand.RemoveSignatory: {
         try {
           const response = await commands.removeSignatory(commandOptions, {
             accountId: req.params[0],
@@ -412,7 +412,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "createRole": {
+      case IrohaCommand.CreateRole: {
         //Need to test
         try {
           const response = await commands.createRole(commandOptions, {
@@ -424,7 +424,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "appendRole": {
+      case IrohaCommand.AppendRole: {
         //Need to test
         try {
           const response = await commands.appendRole(commandOptions, {
