@@ -365,18 +365,7 @@ test(testCase, async (t: Test) => {
     t.equal(res.status, 200);
     t.equal(res.data.transactionReceipt.status, "COMMITTED");
   }
-  // {
-  //   const req = {
-  //     commandName: "setAccountQuorum",
-  //     params: ["admin@test", 1],
-  //   };
-  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
-  //   t.ok(res);
-  //   t.ok(res.data);
-  //   t.equal(res.status, 200);
-  //   console.log(res.data.transactionReceipt);
-  //   t.equal(res.data.transactionReceipt.status, "COMMITTED");
-  // }
+
   {
     const req = {
       commandName: "getSignatories",
@@ -448,6 +437,9 @@ test(testCase, async (t: Test) => {
       params: [[firstTxHash]],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
     const tmpArr = res.data.transactionReceipt.array[0][0][0][0][0][0];
     const tmpArr2 = tmpArr[tmpArr.length - 1];
     t.equal(tmpArr2[0], "admin@test");
@@ -463,59 +455,60 @@ test(testCase, async (t: Test) => {
       params: ["admin@test", 100, firstTxHash],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
-    console.log(res.data.transactionReceipt.transactionsList);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.srcAccountId,
+      "admin@test",
+    );
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.destAccountId,
+      "user1@test",
+    );
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.assetId,
+      "coolcoin#test",
+    );
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.description,
+      "testTx",
+    );
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.amount,
+      "57.75",
+    );
+    console.log(
+      res.data.transactionReceipt.transactionsList[0].signaturesList[0],
+    );
+    console.log(firstTxHash);
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].signaturesList[0]
+        .publicKey,
+      "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
+    );
   }
 
-  // const responseToTransfer = await connector.transact({
-  //   commandName: "transferAsset",
-  //   params: ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
-  // });
-  // t.equal(responseToTransfer.transactionReceipt.status, "COMMITTED");
-  // const firstTxHash = responseToTransfer.transactionReceipt.txHash;
-
-  // const respToGetAccTx = await connector.transact({
-  //   commandName: "getAccountTransactions",
-  //   params: ["admin@test", 100, firstTxHash],
-  // });
-  // console.log(respToGetAccTx);
-
-  // const respToGetAccAssetTx = await connector.transact({
-  //   commandName: "getAccountAssetTransactions",
-  //   params: ["admin@test", "coolcoin#test", 100, firstTxHash],
-  // });
-  // console.log(respToGetAccAssetTx);
-
-  // const respToRevoke = await connector.transact({
-  //   commandName: "revokePermission",
-  //   params: ["user1@test", [6]],
-  // });
-  // console.log(respToRevoke);
-
-  // const respToGrantPermissions = await connector.transact({
-  //   commandName: "grantPermission",
-  //   params: ["user1@test", testArr],
-  // });
-  // console.log(respToGrantPermissions);
-
-  // const respToCreateRole = await connector.transact({
-  //   commandName: "createRole",
-  //   params: ["testrole", testArr],
-  // });
-  // console.log(respToCreateRole);
-
-  // const respToAppendRole = await connector.transact({
-  //   commandName: "appendRole",
-  //   params: ["user1@test", "money_creator"],
-  // });
-  // console.log(respToAppendRole);
-  // const respToAddSign = await connector.transact({
-  //   commandName: "addSignatory",
-  //   params: [
-  //     "user1@test",
-  //     "0000000000000000000000000000000000000000000000000000000000000001",
-  //   ],
-  // });
-  // console.log(respToAddSign);
+  {
+    const req = {
+      commandName: "getPeers",
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt[0].address, "127.0.0.1:10001");
+    t.equal(
+      res.data.transactionReceipt[0].peerKey,
+      "bddd58404d1315e0eb27902c5d7c8eb0602c16238f005773df406bc191308929",
+    );
+    t.equal(res.data.transactionReceipt[0].tlsCertificate, "");
+  }
 
   t.end();
 });

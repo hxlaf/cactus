@@ -435,7 +435,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "grantPermission": {
+      case IrohaCommand.GrantPermission: {
         //need to fix
         try {
           const response = await commands.grantPermission(commandOptions, {
@@ -447,7 +447,7 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
-      case "revokePermission": {
+      case IrohaCommand.RevokePermission: {
         //need to fix
         try {
           const response = await commands.revokePermission(commandOptions, {
@@ -460,7 +460,6 @@ export class PluginLedgerConnectorIroha
         }
       }
       case IrohaQuery.GetTransactions: {
-        //output hard to test
         try {
           // {txHashesList!: Array<string>;}
           const response = await queries.getTransactions(queryOptions, {
@@ -472,7 +471,6 @@ export class PluginLedgerConnectorIroha
         }
       }
       case IrohaQuery.GetAccountTransactions: {
-        //output hard to test
         try {
           const response = await queries.getAccountTransactions(queryOptions, {
             accountId: req.params[0],
@@ -485,7 +483,6 @@ export class PluginLedgerConnectorIroha
         }
       }
       case IrohaQuery.GetAccountAssetTransactions: {
-        //output hard to test
         try {
           const response = await queries.getAccountAssetTransactions(
             queryOptions,
@@ -496,6 +493,14 @@ export class PluginLedgerConnectorIroha
               firstTxHash: req.params[3],
             },
           );
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaQuery.GetPeers: {
+        try {
+          const response = await queries.getPeers(queryOptions);
           return { transactionReceipt: response };
         } catch (err) {
           throw new Error(err);
