@@ -122,6 +122,86 @@ export interface InvokeContractV1Request {
 /**
  * 
  * @export
+ * @enum {string}
+ */
+export enum IrohaCommand {
+    /**
+    * Make entity in the system, capable of sending transactions or queries, storing signatories, personal data and identifiers.
+    */
+    CreateAccount = 'createAccount',
+    /**
+    * Set key-value information for a given account.
+    */
+    SetAccountDetail = 'setAccountDetail',
+    /**
+    * Set the number of signatories required to confirm the identity of a user, who creates the transaction.
+    */
+    SetAccountQuorum = 'setAccountQuorum',
+    /**
+    * Set key-value information for a given account if the old value matches the value passed.
+    */
+    CompareAndSetAccountDetail = 'сompareAndSetAccountDetail',
+    /**
+    * Create a new type of asset, unique in a domain. An asset is a countable representation of a commodity.
+    */
+    CreateAsset = 'createAsset',
+    /**
+    * Increase the quantity of an asset on account of transaction creator.
+    */
+    AddAssetQuantity = 'addAssetQuantity',
+    /**
+    * Decrease the number of assets on account of transaction creator.
+    */
+    SubtractAssetQuantity = 'subtractAssetQuantity',
+    /**
+    * Share assets within the account in peer network: in the way that source account transfers assets to the target account.
+    */
+    TransferAsset = 'transferAsset',
+    /**
+    * Make new domain in Iroha network, which is a group of accounts.
+    */
+    CreateDomain = 'createDomain',
+    /**
+    * Create a new role in the system from the set of permissions.
+    */
+    CreateRole = 'createRole',
+    /**
+    * Detach a role from the set of roles of an account.
+    */
+    DetachRole = 'detachRole',
+    /**
+    * Promote an account to some created role in the system, where a role is a set of permissions account has to perform an action (command or query).
+    */
+    AppendRole = 'appendRole',
+    /**
+    * Add an identifier to the account. Such identifier is a public key of another device or a public key of another user.
+    */
+    AddSignatory = 'addSignatory',
+    /**
+    * Remove a public key, associated with an identity, from an account
+    */
+    RemoveSignatory = 'removeSignatory',
+    /**
+    * Give another account rights to perform actions on the account of transaction sender (give someone right to do something with my account).
+    */
+    GrantPermission = 'grantPermission',
+    /**
+    * Revoke or dismiss given granted permission from another account in the network.
+    */
+    RevokePermission = 'revokePermission',
+    /**
+    * Write into ledger the fact of peer addition into the peer network.
+    */
+    AddPeer = 'addPeer',
+    /**
+    * Write into ledger the fact of peer removal from the network.
+    */
+    RemovePeer = 'removePeer'
+}
+
+/**
+ * 
+ * @export
  * @interface RunTransactionRequest
  */
 export interface RunTransactionRequest {

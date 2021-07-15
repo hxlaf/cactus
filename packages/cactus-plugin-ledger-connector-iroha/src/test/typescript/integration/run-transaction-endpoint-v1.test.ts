@@ -1,11 +1,11 @@
-//import http from "http";
-//import { AddressInfo } from "net";
+import http from "http";
+import { AddressInfo } from "net";
 
 import test, { Test } from "tape-promise/tape";
 import { v4 as uuidv4 } from "uuid";
 
-//import bodyParser from "body-parser";
-//import express from "express";
+import bodyParser from "body-parser";
+import express from "express";
 
 import {
   Containers,
@@ -18,9 +18,9 @@ import { PluginRegistry } from "@hyperledger/cactus-core";
 import { PluginImportType } from "@hyperledger/cactus-core-api";
 
 import {
-  //IListenOptions,
+  IListenOptions,
   LogLevelDesc,
-  //Servers,
+  Servers,
 } from "@hyperledger/cactus-common";
 //import * as grpc from "grpc";
 //import { CommandService_v1Client as CommandService } from "iroha-helpers-ts/lib/proto/endpoint_grpc_pb";
@@ -31,14 +31,15 @@ import {
 
 import {
   PluginLedgerConnectorIroha,
-  //DefaultApi as IrohaApi,
+  DefaultApi as IrohaApi,
   //RunTransactionRequest,
   PluginFactoryLedgerConnector,
+  RunTransactionRequest,
 } from "../../../main/typescript/public-api";
 
 //import { IPluginLedgerConnectorIrohaOptions } from "../../../main/typescript/plugin-ledger-connector-iroha";
 //import { DiscoveryOptions } from "iroha-network";
-//import { Configuration } from "@hyperledger/cactus-core-api";
+import { Configuration } from "@hyperledger/cactus-core-api";
 
 /**
  * Use this to debug issues with the Iroha node SDK
@@ -46,6 +47,22 @@ import {
  * export HFC_LOGGING='{"debug":"console","info":"console"}'
  * ```
  */
+// class IrohaResponse {
+//   txHash!: string;
+//   status!: string;
+
+//   IrohaResponse(txHash: string, status: string) {
+//     this.txHash = txHash;
+//     this.status = status;
+//   }
+// }
+
+// function setIrohaResp(resp: IrohaResponse) {
+//   let irohaRes = new IrohaResponse();
+//   irohaRes = resp;
+//   console.log("sending iroha response :: %s\n", JSON.stringify(irohaRes));
+//   return irohaRes;
+// }
 
 const testCase = "runs tx on an Iroha v1.2.0 ledger";
 const logLevel: LogLevelDesc = "TRACE";
@@ -103,175 +120,355 @@ test(testCase, async (t: Test) => {
     pluginRegistry: new PluginRegistry(),
   });
 
-  const respToCreateDomain = await connector.transact({
-    commandName: "createDomain",
-    params: ["test2", "admin"],
-  });
-  t.equal(respToCreateDomain.transactionReceipt.status, "COMMITTED");
+  const expressApp = express();
+  expressApp.use(bodyParser.json({ limit: "250mb" }));
+  const server = http.createServer(expressApp);
+  const listenOptions: IListenOptions = {
+    hostname: "0.0.0.0",
+    port: 0,
+    server,
+  };
+  const addressInfo = (await Servers.listen(listenOptions)) as AddressInfo;
+  test.onFinish(async () => await Servers.shutdown(server));
+  const { address, port } = addressInfo;
+  const apiHost = `http://${address}:${port}`;
+  const apiConfig = new Configuration({ basePath: apiHost });
+  const apiClient = new IrohaApi(apiConfig);
 
-  const respQuerySign = await connector.transact({
-    commandName: "getSignatories",
-    params: ["admin@test"],
-  });
-  console.log(respQuerySign);
-  t.equal(
-    respQuerySign.transactionReceipt[0],
-    "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
-  );
+  await connector.getOrCreateWebServices();
+  await connector.registerWebServices(expressApp);
 
-  const respToCreateAccount = await connector.transact({
-    commandName: "createAccount",
-    params: [
-      "user1",
-      "test",
-      "0000000000000000000000000000000000000000000000000000000000000000",
-    ],
-  });
-  console.log(respToCreateAccount.transactionReceipt.txHash);
-  t.equal(respToCreateAccount.transactionReceipt.status, "COMMITTED");
-
-  const respToGetAcc = await connector.transact({
-    commandName: "getAccount",
-    params: ["admin@test"],
-  });
-  console.log(respToGetAcc);
-  t.equal(respToGetAcc.transactionReceipt.accountId, "admin@test");
-  t.equal(respToGetAcc.transactionReceipt.domainId, "test");
-  t.equal(respToGetAcc.transactionReceipt.quorum, 1);
-
-  const respToGetAcc2 = await connector.transact({
-    commandName: "getAccount",
-    params: ["user1@test"],
-  });
-  console.log(respToGetAcc2);
-  t.equal(respToGetAcc2.transactionReceipt.accountId, "user1@test");
-  t.equal(respToGetAcc2.transactionReceipt.domainId, "test");
-  t.equal(respToGetAcc2.transactionReceipt.quorum, 1);
-
-  const respToGetRawAcc = await connector.transact({
-    commandName: "getRawAccount",
-    params: ["user1@test"],
-  });
-  console.log(respToGetRawAcc);
-
-  const respToCreateAsset = await connector.transact({
-    commandName: "createAsset",
-    params: ["coolcoin", "test", 3],
-  });
-  console.log(respToCreateAsset.transactionReceipt.txHash);
-  t.equal(respToCreateAsset.transactionReceipt.status, "COMMITTED");
-
-  const respToGetAssetInfo = await connector.transact({
-    commandName: "getAssetInfo",
-    params: ["coolcoin#test"],
-  });
-  console.log(respToGetAssetInfo);
-  t.equal(respToGetAssetInfo.transactionReceipt.assetId, "coolcoin#test");
-  t.equal(respToGetAssetInfo.transactionReceipt.domainId, "test");
-  t.equal(respToGetAssetInfo.transactionReceipt.precision, 3);
-
-  const respToAddAsset = await connector.transact({
-    commandName: "addAssetQuantity",
-    params: ["coolcoin#test", "123.123"],
-  });
-  t.equal(respToAddAsset.transactionReceipt.status, "COMMITTED");
-
-  const responseToTransfer = await connector.transact({
-    commandName: "transferAsset",
-    params: ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
-  });
-  t.equal(responseToTransfer.transactionReceipt.status, "COMMITTED");
-  const firstTxHash = responseToTransfer.transactionReceipt.txHash;
-
-  const respToAccAsset = await connector.transact({
-    commandName: "getAccountAssets",
-    params: ["admin@test", 100, "coolcoin#test"],
-  });
-  console.log(respToAccAsset);
-  t.equal(respToAccAsset.transactionReceipt[0].assetId, "coolcoin#test");
-  t.equal(respToAccAsset.transactionReceipt[0].accountId, "admin@test");
-  t.equal(respToAccAsset.transactionReceipt[0].balance, "65.373");
-
-  const respToAccAsset2 = await connector.transact({
-    commandName: "getAccountAssets",
-    params: ["user1@test", 100, "coolcoin#test"],
-  });
-  console.log(respToAccAsset2);
-  t.equal(respToAccAsset2.transactionReceipt[0].assetId, "coolcoin#test");
-  t.equal(respToAccAsset2.transactionReceipt[0].accountId, "user1@test");
-  t.equal(respToAccAsset2.transactionReceipt[0].balance, "57.75");
-
-  const respToSubAsset = await connector.transact({
-    commandName: "subtractAssetQuantity",
-    params: ["coolcoin#test", "30.123"],
-  });
-  t.equal(respToSubAsset.transactionReceipt.status, "COMMITTED");
-  t.equal(respToAccAsset.transactionReceipt[0].assetId, "coolcoin#test");
-  t.equal(respToAccAsset.transactionReceipt[0].accountId, "admin@test");
-  t.equal(respToAccAsset.transactionReceipt[0].balance, "35.250");
-
-  const respToAccAsset3 = await connector.transact({
-    commandName: "getAccountAssets",
-    params: ["admin@test", 100, "coolcoin#test"],
-  });
-  console.log(respToAccAsset3);
-
-  const respToGetRoles = await connector.transact({
-    commandName: "getRoles",
-    params: [],
-  });
-  console.log(respToGetRoles);
-  t.equal(respToGetRoles.transactionReceipt[0], "cactus_test");
-  t.equal(respToGetRoles.transactionReceipt[1], "cactus_test_full");
-  t.equal(respToGetRoles.transactionReceipt[2], "admin");
-  t.equal(respToGetRoles.transactionReceipt[3], "user");
-  t.equal(respToGetRoles.transactionReceipt[4], "money_creator");
-
-  const respToGetRolePermission = await connector.transact({
-    commandName: "getRolePermissions",
-    params: ["user"],
-  });
-  console.log(respToGetRolePermission);
-  const testArr = [
-    6,
-    7,
-    8,
-    12,
-    13,
-    17,
-    20,
-    23,
-    26,
-    29,
-    32,
-    35,
-    37,
-    38,
-    39,
-    40,
-    41,
-  ];
-  for (let i = 0; i < testArr.length; i++) {
-    t.equal(respToGetRolePermission.transactionReceipt[i], testArr[i]);
+  {
+    const req = {
+      commandName: "createAccount",
+      params: [
+        "user1",
+        "test",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+      ],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
   }
 
-  const respToGetAccTx = await connector.transact({
-    commandName: "getAccountTransactions",
-    params: ["admin@test", 100, firstTxHash],
-  });
-  console.log(respToGetAccTx);
+  {
+    const req = {
+      commandName: "getAccount",
+      params: ["admin@test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.accountId, "admin@test");
+    t.equal(res.data.transactionReceipt.domainId, "test");
+    t.equal(res.data.transactionReceipt.quorum, 1);
+  }
 
-  const respToGetAccAssetTx = await connector.transact({
-    commandName: "getAccountAssetTransactions",
-    params: ["admin@test", "coolcoin#test", 100, firstTxHash],
-  });
-  console.log(respToGetAccAssetTx);
+  {
+    const req = {
+      commandName: "getRawAccount",
+      params: ["user1@test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.array[0][0], "user1@test");
+    t.equal(res.data.transactionReceipt.array[0][1], "test");
+    t.equal(res.data.transactionReceipt.array[0][2], 1);
+    t.equal(res.data.transactionReceipt.array[1][0], "user");
+  }
 
-  const respToGetTx = await connector.transact({
-    commandName: "getTransactions",
-    params: [[firstTxHash]],
-  });
-  console.log(respToGetTx);
+  {
+    const req = {
+      commandName: "createDomain",
+      params: ["test2", "admin"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "createAsset",
+      params: ["coolcoin", "test", 3],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "getAssetInfo",
+      params: ["coolcoin#test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.assetId, "coolcoin#test");
+    t.equal(res.data.transactionReceipt.domainId, "test");
+    t.equal(res.data.transactionReceipt.precision, 3);
+  }
+
+  {
+    const req = {
+      commandName: "addAssetQuantity",
+      params: ["coolcoin#test", "123.123"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "transferAsset",
+      params: ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "getAccountAssets",
+      params: ["admin@test", 100, "coolcoin#test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt[0].assetId, "coolcoin#test");
+    t.equal(res.data.transactionReceipt[0].accountId, "admin@test");
+    t.equal(res.data.transactionReceipt[0].balance, "65.373");
+  }
+
+  {
+    const req = {
+      commandName: "getAccountAssets",
+      params: ["user1@test", 100, "coolcoin#test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt[0].assetId, "coolcoin#test");
+    t.equal(res.data.transactionReceipt[0].accountId, "user1@test");
+    t.equal(res.data.transactionReceipt[0].balance, "57.75");
+  }
+
+  {
+    const req = {
+      commandName: "subtractAssetQuantity",
+      params: ["coolcoin#test", "30.123"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+    console.log(res.data.transactionReceipt);
+  }
+
+  {
+    const req = {
+      commandName: "getAccountAssets",
+      params: ["admin@test", 100, "coolcoin#test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt[0].assetId, "coolcoin#test");
+    t.equal(res.data.transactionReceipt[0].accountId, "admin@test");
+    t.equal(res.data.transactionReceipt[0].balance, "35.250");
+  }
+
+  {
+    const req = {
+      commandName: "getSignatories",
+      params: ["admin@test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    console.log(res.data.transactionReceipt);
+    t.equal(
+      res.data.transactionReceipt[0],
+      "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
+    );
+  }
+
+  {
+    const req = {
+      commandName: "addSignatory",
+      params: [
+        "admin@test",
+        "0000000000000000000000000000000000000000000000000000000000000001",
+      ],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "getSignatories",
+      params: ["admin@test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    console.log(res.data.transactionReceipt);
+    t.equal(
+      res.data.transactionReceipt[0],
+      "0000000000000000000000000000000000000000000000000000000000000001",
+    );
+    t.equal(
+      res.data.transactionReceipt[1],
+      "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
+    );
+  }
+
+  // {
+  //   const req = {
+  //     commandName: "setAccountQuorum",
+  //     params: ["admin@test", 2],
+  //   };
+  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+  //   t.ok(res);
+  //   t.ok(res.data);
+  //   t.equal(res.status, 200);
+  //   console.log(res.data.transactionReceipt);
+  //   t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  // }
+
+  {
+    const req = {
+      commandName: "removeSignatory",
+      params: [
+        "admin@test",
+        "0000000000000000000000000000000000000000000000000000000000000001",
+      ],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+  // {
+  //   const req = {
+  //     commandName: "setAccountQuorum",
+  //     params: ["admin@test", 1],
+  //   };
+  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+  //   t.ok(res);
+  //   t.ok(res.data);
+  //   t.equal(res.status, 200);
+  //   console.log(res.data.transactionReceipt);
+  //   t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  // }
+  {
+    const req = {
+      commandName: "getSignatories",
+      params: ["admin@test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    console.log(res.data.transactionReceipt);
+    t.equal(
+      res.data.transactionReceipt[0],
+      "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
+    );
+  }
+
+  // const responseToTransfer = await connector.transact({
+  //   commandName: "transferAsset",
+  //   params: ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
+  // });
+  // t.equal(responseToTransfer.transactionReceipt.status, "COMMITTED");
+  // const firstTxHash = responseToTransfer.transactionReceipt.txHash;
+
+  // const respToGetRoles = await connector.transact({
+  //   commandName: "getRoles",
+  //   params: [],
+  // });
+  // console.log(respToGetRoles);
+  // t.equal(respToGetRoles.transactionReceipt[0], "cactus_test");
+  // t.equal(respToGetRoles.transactionReceipt[1], "cactus_test_full");
+  // t.equal(respToGetRoles.transactionReceipt[2], "admin");
+  // t.equal(respToGetRoles.transactionReceipt[3], "user");
+  // t.equal(respToGetRoles.transactionReceipt[4], "money_creator");
+
+  // const respToGetRolePermission = await connector.transact({
+  //   commandName: "getRolePermissions",
+  //   params: ["user"],
+  // });
+  // console.log(respToGetRolePermission);
+  // const testArr = [
+  //   6,
+  //   7,
+  //   8,
+  //   12,
+  //   13,
+  //   17,
+  //   20,
+  //   23,
+  //   26,
+  //   29,
+  //   32,
+  //   35,
+  //   37,
+  //   38,
+  //   39,
+  //   40,
+  //   41,
+  // ];
+  // for (let i = 0; i < testArr.length; i++) {
+  //   t.equal(respToGetRolePermission.transactionReceipt[i], testArr[i]);
+  // }
+
+  // const respToGetAccTx = await connector.transact({
+  //   commandName: "getAccountTransactions",
+  //   params: ["admin@test", 100, firstTxHash],
+  // });
+  // console.log(respToGetAccTx);
+
+  // const respToGetAccAssetTx = await connector.transact({
+  //   commandName: "getAccountAssetTransactions",
+  //   params: ["admin@test", "coolcoin#test", 100, firstTxHash],
+  // });
+  // console.log(respToGetAccAssetTx);
+
+  // const respToGetTx = await connector.transact({
+  //   commandName: "getTransactions",
+  //   params: [[firstTxHash]],
+  // });
+  // console.log(respToGetTx);
 
   // const respToRevoke = await connector.transact({
   //   commandName: "revokePermission",

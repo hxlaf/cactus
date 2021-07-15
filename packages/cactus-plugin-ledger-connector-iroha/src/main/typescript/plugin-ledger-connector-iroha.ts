@@ -239,8 +239,11 @@ export class PluginLedgerConnectorIroha
     };
     console.log(req);
 
+    //enum
+
     switch (req.commandName) {
       case "createAccount": {
+        //IrohaCommand.CreateAccount
         try {
           const response = await commands //create user
             .createAccount(commandOptions, {
@@ -271,6 +274,17 @@ export class PluginLedgerConnectorIroha
           const response = await commands.createDomain(commandOptions, {
             domainId: req.params[0],
             defaultRole: req.params[1],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "setAccountQuorum": {
+        try {
+          const response = await commands.setAccountQuorum(commandOptions, {
+            accountId: req.params[0],
+            quorum: req.params[1],
           });
           return { transactionReceipt: response };
         } catch (err) {
@@ -371,6 +385,17 @@ export class PluginLedgerConnectorIroha
       case "addSignatory": {
         try {
           const response = await commands.addSignatory(commandOptions, {
+            accountId: req.params[0],
+            publicKey: req.params[1],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "removeSignatory": {
+        try {
+          const response = await commands.removeSignatory(commandOptions, {
             accountId: req.params[0],
             publicKey: req.params[1],
           });
