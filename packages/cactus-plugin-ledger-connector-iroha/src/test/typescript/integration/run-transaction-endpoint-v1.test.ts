@@ -422,9 +422,7 @@ test(testCase, async (t: Test) => {
       40,
       41,
     ];
-    for (let i = 0; i < testArr.length; i++) {
-      t.equal(res.data.transactionReceipt[i], testArr[i]);
-    }
+    t.deepEqual(res.data.transactionReceipt, testArr);
   }
 
   {
@@ -444,15 +442,6 @@ test(testCase, async (t: Test) => {
     t.equal(tmpArr2[3], "testTx");
     t.equal(tmpArr2[4], "57.75");
   }
-
-  // {
-  //   const req = {
-  //     commandName: "getPendingTransactions",
-  //     params: [100, firstTxHash],
-  //   };
-  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
-  //   console.log(res);
-  // }
 
   {
     const req = {
@@ -642,7 +631,22 @@ test(testCase, async (t: Test) => {
       params: [],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
     console.log(res.data.transactionReceipt);
+  }
+
+  {
+    const req = {
+      commandName: "getPendingTransactions",
+      params: [100, undefined],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.deepEqual(res.data.transactionReceipt, []);
   }
 
   // {
