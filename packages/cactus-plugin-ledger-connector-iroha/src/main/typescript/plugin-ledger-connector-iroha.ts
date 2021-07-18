@@ -11,6 +11,10 @@ import queries from "iroha-helpers-ts/lib/queries";
 import type { Express } from "express";
 import { promisify } from "util";
 import { Optional } from "typescript-optional";
+import {
+  GrantablePermission,
+  GrantablePermissionMap,
+} from "iroha-helpers-ts/lib/proto/primitive_pb";
 //import { AbiItem } from "web3-utils";
 //import { Contract, ContractSendMethod } from "web3-eth-contract";
 //import { TransactionReceipt } from "web3-eth";
@@ -34,6 +38,7 @@ import {
   Logger,
   LoggerProvider,
   LogLevelDesc,
+  Http405NotAllowedError,
 } from "@hyperledger/cactus-common";
 
 import {
@@ -402,7 +407,6 @@ export class PluginLedgerConnectorIroha
         }
       }
       case IrohaCommand.CreateRole: {
-        //Need to test
         try {
           const response = await commands.createRole(commandOptions, {
             roleName: req.params[0],
@@ -414,9 +418,19 @@ export class PluginLedgerConnectorIroha
         }
       }
       case IrohaCommand.AppendRole: {
-        //Need to test
         try {
           const response = await commands.appendRole(commandOptions, {
+            accountId: req.params[0],
+            roleName: req.params[1],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaCommand.DetachRole: {
+        try {
+          const response = await commands.detachRole(commandOptions, {
             accountId: req.params[0],
             roleName: req.params[1],
           });
@@ -436,11 +450,11 @@ export class PluginLedgerConnectorIroha
         }
       }
       case IrohaCommand.GrantPermission: {
-        //need to fix
         try {
+          type permission = keyof GrantablePermissionMap;
           const response = await commands.grantPermission(commandOptions, {
             accountId: req.params[0],
-            permission: "CAN_SET_QUORUM",
+            permission: GrantablePermission[req.params[1] as permission],
           });
           return { transactionReceipt: response };
         } catch (err) {
@@ -448,22 +462,36 @@ export class PluginLedgerConnectorIroha
         }
       }
       case IrohaCommand.RevokePermission: {
-        //need to fix
         try {
+          type permission = keyof GrantablePermissionMap;
           const response = await commands.revokePermission(commandOptions, {
             accountId: req.params[0],
-            permission: req.params[1],
+            permission: GrantablePermission[req.params[1] as permission],
           });
           return { transactionReceipt: response };
         } catch (err) {
           throw new Error(err);
         }
       }
+      case IrohaCommand.SetSettingValue: {
+        throw new Http405NotAllowedError("SetSettingValue is not supported.");
+      }
       case IrohaQuery.GetTransactions: {
         try {
           // {txHashesList!: Array<string>;}
           const response = await queries.getTransactions(queryOptions, {
             txHashesList: req.params[0],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaQuery.GetPendingTransactions: {
+        try {
+          const response = await queries.getPendingTransactions(queryOptions, {
+            pageSize: req.params[0],
+            firstTxHash: req.params[1],
           });
           return { transactionReceipt: response };
         } catch (err) {
@@ -493,6 +521,34 @@ export class PluginLedgerConnectorIroha
               firstTxHash: req.params[3],
             },
           );
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaQuery.GetBlock: {
+        try {
+          const response = await queries.getBlock(queryOptions, {
+            height: req.params[0],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaQuery.GetEngineReceipts: {
+        try {
+          const response = await queries.getEngineReceipts(queryOptions, {
+            txHash: req.params[0],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaQuery.FetchCommits: {
+        try {
+          const response = await queries.fetchCommits(queryOptions);
           return { transactionReceipt: response };
         } catch (err) {
           throw new Error(err);

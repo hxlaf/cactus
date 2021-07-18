@@ -101,12 +101,12 @@ test(testCase, async (t: Test) => {
 
   await postgres.start(); //start postgres first
   await iroha.start();
-  test.onFinish(async () => {
-    await iroha.stop();
-    //await iroha.destroy();
-    await postgres.stop();
-    //await postgres.destroy();
-  });
+  // test.onFinish(async () => {
+  //   await iroha.stop();
+  //   //await iroha.destroy();
+  //   await postgres.stop();
+  //   //await postgres.destroy();
+  // });
 
   const rpcToriiPortHost = await iroha.getRpcToriiPortHost();
   const factory = new PluginFactoryLedgerConnector({
@@ -270,7 +270,6 @@ test(testCase, async (t: Test) => {
     t.ok(res.data);
     t.equal(res.status, 200);
     t.equal(res.data.transactionReceipt.status, "COMMITTED");
-    console.log(res.data.transactionReceipt);
   }
 
   {
@@ -296,7 +295,6 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    console.log(res.data.transactionReceipt);
     t.equal(
       res.data.transactionReceipt[0],
       "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
@@ -327,7 +325,6 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    console.log(res.data.transactionReceipt);
     t.equal(
       res.data.transactionReceipt[0],
       "0000000000000000000000000000000000000000000000000000000000000001",
@@ -375,7 +372,6 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    console.log(res.data.transactionReceipt);
     t.equal(
       res.data.transactionReceipt[0],
       "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
@@ -449,6 +445,15 @@ test(testCase, async (t: Test) => {
     t.equal(tmpArr2[4], "57.75");
   }
 
+  // {
+  //   const req = {
+  //     commandName: "getPendingTransactions",
+  //     params: [100, firstTxHash],
+  //   };
+  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+  //   console.log(res);
+  // }
+
   {
     const req = {
       commandName: "getAccountTransactions",
@@ -483,10 +488,45 @@ test(testCase, async (t: Test) => {
         .commandsList[0].transferAsset.amount,
       "57.75",
     );
-    console.log(
-      res.data.transactionReceipt.transactionsList[0].signaturesList[0],
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].signaturesList[0]
+        .publicKey,
+      "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
     );
-    console.log(firstTxHash);
+  }
+
+  {
+    const req = {
+      commandName: "getAccountAssetTransactions",
+      params: ["admin@test", "coolcoin#test", 100, firstTxHash],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.srcAccountId,
+      "admin@test",
+    );
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.destAccountId,
+      "user1@test",
+    );
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.assetId,
+      "coolcoin#test",
+    );
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.description,
+      "testTx",
+    );
+    t.equal(
+      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
+        .commandsList[0].transferAsset.amount,
+      "57.75",
+    );
+
     t.equal(
       res.data.transactionReceipt.transactionsList[0].signaturesList[0]
         .publicKey,
@@ -510,6 +550,122 @@ test(testCase, async (t: Test) => {
     t.equal(res.data.transactionReceipt[0].tlsCertificate, "");
   }
 
+  {
+    const req = {
+      commandName: "getBlock",
+      params: [1],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(
+      res.data.transactionReceipt.payload.transactionsList[0].payload
+        .reducedPayload.commandsList[0].addPeer.peer.address,
+      "127.0.0.1:10001",
+    );
+    t.equal(
+      res.data.transactionReceipt.payload.transactionsList[0].payload
+        .reducedPayload.commandsList[0].addPeer.peer.peerKey,
+      "bddd58404d1315e0eb27902c5d7c8eb0602c16238f005773df406bc191308929",
+    );
+    t.equal(
+      res.data.transactionReceipt.payload.transactionsList[0].payload
+        .reducedPayload.commandsList[0].addPeer.peer.tlsCertificate,
+      "",
+    );
+  }
+
+  {
+    const req = {
+      commandName: "appendRole",
+      params: ["user1@test", "money_creator"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "detachRole",
+      params: ["user1@test", "money_creator"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "createRole",
+      params: ["testrole", [6, 7]],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "grantPermission",
+      params: ["user1@test", "CAN_CALL_ENGINE_ON_MY_BEHALF"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "revokePermission",
+      params: ["user1@test", "CAN_CALL_ENGINE_ON_MY_BEHALF"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "fetchCommits",
+      params: [],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    console.log(res.data.transactionReceipt);
+  }
+
+  // {
+  //   const req = {
+  //     commandName: "getEngineReceipts",
+  //     params: [firstTxHash],
+  //   };
+  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+  //   console.log(res.data.transactionReceipt.array[0]);
+  // }
+
+  // {
+  //   const req = {
+  //     commandName: "setSettingValue",
+  //     params: ["key", "value"],
+  //   };
+  //   //const res = await console.log(res.data);
+  //   await t.rejects(
+  //     apiClient.runTransactionV1(req as RunTransactionRequest),
+  //     /Format is Authorization: Bearer \[token\]/,
+  //     "SetSettingValue transaction is rejected OK",
+  //   );
+  // }
   t.end();
 });
 

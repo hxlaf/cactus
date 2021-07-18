@@ -6,6 +6,7 @@ import {
   LogLevelDesc,
   LoggerProvider,
   IAsyncProvider,
+  Http405NotAllowedError,
 } from "@hyperledger/cactus-common";
 import {
   IEndpointAuthzOptions,
@@ -91,6 +92,10 @@ export class RunTransactionEndpoint implements IWebServiceEndpoint {
       const resBody = await this.options.connector.transact(reqBody);
       res.json(resBody);
     } catch (ex) {
+      if (ex instanceof Http405NotAllowedError) {
+        res.status(405);
+        res.json(ex);
+      }
       this.log.error(`Crash while serving ${reqTag}`, ex);
       res.status(500).json({
         message: "Internal Server Error",

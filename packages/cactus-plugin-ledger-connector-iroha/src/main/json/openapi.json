@@ -51,7 +51,8 @@
           "grantPermission",
           "revokePermission",
           "addPeer",
-          "removePeer"
+          "removePeer",
+          "setSettingValue"
         ],
         "x-enum-descriptions": [
           "Make entity in the system, capable of sending transactions or queries, storing signatories, personal data and identifiers.",
@@ -71,7 +72,8 @@
           "Give another account rights to perform actions on the account of transaction sender (give someone right to do something with my account).",
           "Revoke or dismiss given granted permission from another account in the network.",
           "Write into ledger the fact of peer addition into the peer network.",
-          "Write into ledger the fact of peer removal from the network."
+          "Write into ledger the fact of peer removal from the network.",
+          "This command is not available for use, it was added for backward compatibility with Iroha."
         ],
         "x-enum-varnames": [
           "CreateAccount",
@@ -91,7 +93,8 @@
           "GrantPermission",
           "RevokePermission",
           "AddPeer",
-          "RemovePeer"
+          "RemovePeer",
+          "SetSettingValue"
         ]
       },
       "IrohaQuery": {

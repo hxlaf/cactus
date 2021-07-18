@@ -196,7 +196,11 @@ export enum IrohaCommand {
     /**
     * Write into ledger the fact of peer removal from the network.
     */
-    RemovePeer = 'removePeer'
+    RemovePeer = 'removePeer',
+    /**
+    * This command is not available for use, it was added for backward compatibility with Iroha.
+    */
+    SetSettingValue = 'setSettingValue'
 }
 
 /**
