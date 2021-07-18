@@ -140,7 +140,7 @@ export enum IrohaCommand {
     /**
     * Set key-value information for a given account if the old value matches the value passed.
     */
-    CompareAndSetAccountDetail = 'сompareAndSetAccountDetail',
+    CompareAndSetAccountDetail = 'compareAndSetAccountDetail',
     /**
     * Create a new type of asset, unique in a domain. An asset is a countable representation of a commodity.
     */

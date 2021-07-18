@@ -249,12 +249,39 @@ export class PluginLedgerConnectorIroha
     switch (req.commandName) {
       case IrohaCommand.CreateAccount: {
         try {
-          const response = await commands //create user
-            .createAccount(commandOptions, {
-              accountName: req.params[0],
-              domainId: req.params[1],
-              publicKey: req.params[2],
-            });
+          const response = await commands.createAccount(commandOptions, {
+            accountName: req.params[0],
+            domainId: req.params[1],
+            publicKey: req.params[2],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaCommand.SetAccountDetail: {
+        try {
+          const response = await commands.setAccountDetail(commandOptions, {
+            accountId: req.params[0],
+            key: req.params[1],
+            value: req.params[2],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaCommand.CompareAndSetAccountDetail: {
+        try {
+          const response = await commands.compareAndSetAccountDetail(
+            commandOptions,
+            {
+              accountId: req.params[0],
+              key: req.params[1],
+              value: req.params[2],
+              oldValue: req.params[3],
+            },
+          );
           return { transactionReceipt: response };
         } catch (err) {
           throw new Error(err);
@@ -348,6 +375,21 @@ export class PluginLedgerConnectorIroha
         try {
           const queryRes = await queries.getAccount(queryOptions, {
             accountId: req.params[0],
+          });
+          return { transactionReceipt: queryRes };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaQuery.GetAccountDetail: {
+        try {
+          const queryRes = await queries.getAccountDetail(queryOptions, {
+            accountId: req.params[0],
+            key: req.params[1],
+            writer: req.params[2],
+            pageSize: req.params[3],
+            paginationKey: req.params[4],
+            paginationWriter: req.params[5],
           });
           return { transactionReceipt: queryRes };
         } catch (err) {

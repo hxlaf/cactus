@@ -649,6 +649,59 @@ test(testCase, async (t: Test) => {
     t.deepEqual(res.data.transactionReceipt, []);
   }
 
+  {
+    const req = {
+      commandName: "setAccountDetail",
+      params: ["user1@test", "age", "18"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "getAccountDetail",
+      params: ["user1@test", "age", "admin@test", 1, "age", "admin@test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.deepEqual(res.data.transactionReceipt, {
+      "admin@test": { age: "18" },
+    });
+  }
+
+  {
+    const req = {
+      commandName: "compareAndSetAccountDetail",
+      params: ["user1@test", "age", "118", "18"], //change age from 18 to 118
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "getAccountDetail",
+      params: ["user1@test", "age", "admin@test", 1, "age", "admin@test"],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    console.log(res.data.transactionReceipt);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.deepEqual(res.data.transactionReceipt, {
+      "admin@test": { age: "118" },
+    });
+  }
+  // }
   // {
   //   const req = {
   //     commandName: "getEngineReceipts",
@@ -669,7 +722,7 @@ test(testCase, async (t: Test) => {
   //     /Format is Authorization: Bearer \[token\]/,
   //     "SetSettingValue transaction is rejected OK",
   //   );
-  // }
+  }
   t.end();
 });
 

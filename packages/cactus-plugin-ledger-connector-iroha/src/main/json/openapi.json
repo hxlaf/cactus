@@ -37,7 +37,7 @@
           "createAccount",
           "setAccountDetail",
           "setAccountQuorum",
-          "сompareAndSetAccountDetail",
+          "compareAndSetAccountDetail",
           "createAsset",
           "addAssetQuantity",
           "subtractAssetQuantity",
