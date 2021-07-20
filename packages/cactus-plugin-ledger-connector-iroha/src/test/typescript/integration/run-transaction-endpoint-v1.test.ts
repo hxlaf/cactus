@@ -164,9 +164,13 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(res.data.transactionReceipt.accountId, "admin@test");
-    t.equal(res.data.transactionReceipt.domainId, "test");
-    t.equal(res.data.transactionReceipt.quorum, 1);
+    console.log(res.data.transactionReceipt);
+    t.deepEqual(res.data.transactionReceipt, {
+      accountId: "admin@test",
+      domainId: "test",
+      quorum: 1,
+      jsonData: "{}",
+    });
   }
 
   {
@@ -202,9 +206,11 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(res.data.transactionReceipt.assetId, "coolcoin#test");
-    t.equal(res.data.transactionReceipt.domainId, "test");
-    t.equal(res.data.transactionReceipt.precision, 3);
+    t.deepEqual(res.data.transactionReceipt, {
+      assetId: "coolcoin#test",
+      domainId: "test",
+      precision: 3,
+    });
   }
 
   {
@@ -241,9 +247,13 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(res.data.transactionReceipt[0].assetId, "coolcoin#test");
-    t.equal(res.data.transactionReceipt[0].accountId, "admin@test");
-    t.equal(res.data.transactionReceipt[0].balance, "65.373");
+    t.deepEqual(res.data.transactionReceipt, [
+      {
+        assetId: "coolcoin#test",
+        accountId: "admin@test",
+        balance: "65.373",
+      },
+    ]);
   }
 
   {
@@ -255,9 +265,14 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(res.data.transactionReceipt[0].assetId, "coolcoin#test");
-    t.equal(res.data.transactionReceipt[0].accountId, "user1@test");
-    t.equal(res.data.transactionReceipt[0].balance, "57.75");
+    console.log(res.data.transactionReceipt);
+    t.deepEqual(res.data.transactionReceipt, [
+      {
+        assetId: "coolcoin#test",
+        accountId: "user1@test",
+        balance: "57.75",
+      },
+    ]);
   }
 
   {
@@ -281,9 +296,13 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(res.data.transactionReceipt[0].assetId, "coolcoin#test");
-    t.equal(res.data.transactionReceipt[0].accountId, "admin@test");
-    t.equal(res.data.transactionReceipt[0].balance, "35.250");
+    t.deepEqual(res.data.transactionReceipt, [
+      {
+        assetId: "coolcoin#test",
+        accountId: "admin@test",
+        balance: "35.250",
+      },
+    ]);
   }
 
   {
@@ -295,10 +314,9 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(
-      res.data.transactionReceipt[0],
+    t.deepEquals(res.data.transactionReceipt, [
       "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
-    );
+    ]);
   }
 
   {
@@ -325,28 +343,11 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(
-      res.data.transactionReceipt[0],
+    t.deepEqual(res.data.transactionReceipt, [
       "0000000000000000000000000000000000000000000000000000000000000001",
-    );
-    t.equal(
-      res.data.transactionReceipt[1],
       "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
-    );
+    ]);
   }
-
-  // {
-  //   const req = {
-  //     commandName: "setAccountQuorum",
-  //     params: ["admin@test", 2],
-  //   };
-  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
-  //   t.ok(res);
-  //   t.ok(res.data);
-  //   t.equal(res.status, 200);
-  //   console.log(res.data.transactionReceipt);
-  //   t.equal(res.data.transactionReceipt.status, "COMMITTED");
-  // }
 
   {
     const req = {
@@ -372,10 +373,9 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(
-      res.data.transactionReceipt[0],
+    t.deepEqual(res.data.transactionReceipt, [
       "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
-    );
+    ]);
   }
 
   {
@@ -387,11 +387,13 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(res.data.transactionReceipt[0], "cactus_test");
-    t.equal(res.data.transactionReceipt[1], "cactus_test_full");
-    t.equal(res.data.transactionReceipt[2], "admin");
-    t.equal(res.data.transactionReceipt[3], "user");
-    t.equal(res.data.transactionReceipt[4], "money_creator");
+    t.deepEqual(res.data.transactionReceipt, [
+      "cactus_test",
+      "cactus_test_full",
+      "admin",
+      "user",
+      "money_creator",
+    ]);
   }
 
   {
@@ -434,13 +436,10 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    const tmpArr = res.data.transactionReceipt.array[0][0][0][0][0][0];
-    const tmpArr2 = tmpArr[tmpArr.length - 1];
-    t.equal(tmpArr2[0], "admin@test");
-    t.equal(tmpArr2[1], "user1@test");
-    t.equal(tmpArr2[2], "coolcoin#test");
-    t.equal(tmpArr2[3], "testTx");
-    t.equal(tmpArr2[4], "57.75");
+    t.deepEqual(
+      res.data.transactionReceipt.array[0][0][0][0][0][0].slice(-1)[0],
+      ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
+    );
   }
 
   {
@@ -452,30 +451,20 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(
+    t.deepEqual(
       res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.srcAccountId,
-      "admin@test",
-    );
-    t.equal(
-      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.destAccountId,
-      "user1@test",
-    );
-    t.equal(
-      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.assetId,
-      "coolcoin#test",
-    );
-    t.equal(
-      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.description,
-      "testTx",
-    );
-    t.equal(
-      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.amount,
-      "57.75",
+        .commandsList,
+      [
+        {
+          transferAsset: {
+            srcAccountId: "admin@test",
+            destAccountId: "user1@test",
+            assetId: "coolcoin#test",
+            description: "testTx",
+            amount: "57.75",
+          },
+        },
+      ],
     );
     t.equal(
       res.data.transactionReceipt.transactionsList[0].signaturesList[0]
@@ -487,35 +476,24 @@ test(testCase, async (t: Test) => {
   {
     const req = {
       commandName: "getAccountAssetTransactions",
-      params: ["admin@test", "coolcoin#test", 100, firstTxHash],
+      params: ["admin@test", "coolcoin#test", 100, undefined],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
-    t.equal(
+    t.deepEqual(
       res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.srcAccountId,
-      "admin@test",
+        .commandsList,
+      [
+        {
+          transferAsset: {
+            srcAccountId: "admin@test",
+            destAccountId: "user1@test",
+            assetId: "coolcoin#test",
+            description: "testTx",
+            amount: "57.75",
+          },
+        },
+      ],
     );
-    t.equal(
-      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.destAccountId,
-      "user1@test",
-    );
-    t.equal(
-      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.assetId,
-      "coolcoin#test",
-    );
-    t.equal(
-      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.description,
-      "testTx",
-    );
-    t.equal(
-      res.data.transactionReceipt.transactionsList[0].payload.reducedPayload
-        .commandsList[0].transferAsset.amount,
-      "57.75",
-    );
-
     t.equal(
       res.data.transactionReceipt.transactionsList[0].signaturesList[0]
         .publicKey,
@@ -531,12 +509,14 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(res.data.transactionReceipt[0].address, "127.0.0.1:10001");
-    t.equal(
-      res.data.transactionReceipt[0].peerKey,
-      "bddd58404d1315e0eb27902c5d7c8eb0602c16238f005773df406bc191308929",
-    );
-    t.equal(res.data.transactionReceipt[0].tlsCertificate, "");
+    t.deepEqual(res.data.transactionReceipt, [
+      {
+        address: "127.0.0.1:10001",
+        peerKey:
+          "bddd58404d1315e0eb27902c5d7c8eb0602c16238f005773df406bc191308929",
+        tlsCertificate: "",
+      },
+    ]);
   }
 
   {
@@ -548,20 +528,15 @@ test(testCase, async (t: Test) => {
     t.ok(res);
     t.ok(res.data);
     t.equal(res.status, 200);
-    t.equal(
+    t.deepEqual(
       res.data.transactionReceipt.payload.transactionsList[0].payload
-        .reducedPayload.commandsList[0].addPeer.peer.address,
-      "127.0.0.1:10001",
-    );
-    t.equal(
-      res.data.transactionReceipt.payload.transactionsList[0].payload
-        .reducedPayload.commandsList[0].addPeer.peer.peerKey,
-      "bddd58404d1315e0eb27902c5d7c8eb0602c16238f005773df406bc191308929",
-    );
-    t.equal(
-      res.data.transactionReceipt.payload.transactionsList[0].payload
-        .reducedPayload.commandsList[0].addPeer.peer.tlsCertificate,
-      "",
+        .reducedPayload.commandsList[0].addPeer.peer,
+      {
+        address: "127.0.0.1:10001",
+        peerKey:
+          "bddd58404d1315e0eb27902c5d7c8eb0602c16238f005773df406bc191308929",
+        tlsCertificate: "",
+      },
     );
   }
 
@@ -627,30 +602,6 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "fetchCommits",
-      params: [],
-    };
-    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
-    t.ok(res);
-    t.ok(res.data);
-    t.equal(res.status, 200);
-    console.log(res.data.transactionReceipt);
-  }
-
-  {
-    const req = {
-      commandName: "getPendingTransactions",
-      params: [100, undefined],
-    };
-    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
-    t.ok(res);
-    t.ok(res.data);
-    t.equal(res.status, 200);
-    t.deepEqual(res.data.transactionReceipt, []);
-  }
-
-  {
-    const req = {
       commandName: "setAccountDetail",
       params: ["user1@test", "age", "18"],
     };
@@ -701,28 +652,155 @@ test(testCase, async (t: Test) => {
       "admin@test": { age: "118" },
     });
   }
-  // }
-  // {
-  //   const req = {
-  //     commandName: "getEngineReceipts",
-  //     params: [firstTxHash],
-  //   };
-  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
-  //   console.log(res.data.transactionReceipt.array[0]);
-  // }
 
   // {
   //   const req = {
-  //     commandName: "setSettingValue",
-  //     params: ["key", "value"],
+  //     commandName: "addPeer",
+  //     params: [
+  //       "192.168.10.10:50541",
+  //       "0000000000000000000000000000000000000000000000000000000000000002",
+  //     ],
   //   };
-  //   //const res = await console.log(res.data);
-  //   await t.rejects(
-  //     apiClient.runTransactionV1(req as RunTransactionRequest),
-  //     /Format is Authorization: Bearer \[token\]/,
-  //     "SetSettingValue transaction is rejected OK",
-  //   );
+  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+  //   t.ok(res);
+  //   t.ok(res.data);
+  //   t.equal(res.status, 200);
+  //   t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  // }
+
+  {
+    const req = {
+      commandName: "getEngineReceipts",
+      params: [firstTxHash],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    //console.log(res.data.transactionReceipt.array);
+    t.deepEqual(res.data.transactionReceipt.array, [[]]);
   }
+
+  {
+    const req = {
+      commandName: "setSettingValue",
+      params: ["key", "value"],
+    };
+    await t.rejects(
+      apiClient.runTransactionV1(req as RunTransactionRequest),
+      /[\s\S]*/,
+      "SetSettingValue transaction is rejected OK",
+    );
+  }
+
+  // {
+  //   const req = {
+  //     commandName: "callEngine",
+  //     params: [
+  //       undefined,
+  //       "admin@test",
+  //       "7C370993FD90AF204FD582004E2E54E6A94F2651",
+  //       "40c10f19000000000000000000000000969453762b0c739dd285b31635efa00e24c2562800000000000000000000000000000000000000000000000000000000000004d2",
+  //     ],
+  //   };
+  //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+  //   console.log(res);
+  //   // t.ok(res);
+  //   // t.ok(res.data);
+  //   // t.equal(res.status, 200);
+  //   // t.equal(res.data.transactionReceipt, "CallEngine is not supported.");
+  // }
+
+  // // {
+  // //   const req = {
+  // //     commandName: "removePeer",
+  // //     params: [
+  // //       "0000000000000000000000000000000000000000000000000000000000000002",
+  // //     ],
+  // //   };
+  // //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+  // //   console.log(res.data.transactionReceipt);
+  // // }
+
+  {
+    const req = {
+      commandName: "addSignatory",
+      params: [
+        "admin@test",
+        "716fe505f69f18511a1b083915aa9ff73ef36e6688199f3959750db38b8f4bfc",
+      ],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  {
+    const req = {
+      commandName: "setAccountQuorum",
+      params: ["admin@test", 2],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    console.log(res.data.transactionReceipt);
+    t.equal(res.data.transactionReceipt.status, "COMMITTED");
+  }
+
+  // {
+  //   const req1 = {
+  //     commandName: "producePendingTx",
+  //     params: [],
+  //   };
+  //   const res1 = await apiClient.runTransactionV1(
+  //     req1 as RunTransactionRequest,
+  //   );
+  //   console.log(res1);
+  //   console.log("done");
+  // }
+
+  {
+    const req1 = {
+      commandName: "producePendingTx",
+      params: [],
+    };
+    Promise.race([
+      apiClient.runTransactionV1(req1 as RunTransactionRequest),
+      new Promise((resolve) => setTimeout(resolve, 1000)),
+    ]);
+    console.log("done");
+  }
+
+  {
+    const req = {
+      commandName: "getPendingTransactions",
+      params: [5, undefined],
+    };
+    const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+    t.ok(res);
+    t.ok(res.data);
+    t.equal(res.status, 200);
+    t.deepEqual(
+      res.data.transactionReceipt[0].payload.reducedPayload.commandsList[0],
+      { createAsset: { assetName: "coinb", domainId: "test", precision: 3 } },
+    );
+    t.equal(
+      res.data.transactionReceipt[0].signaturesList[0].publicKey,
+      "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
+    );
+  }
+  // // {
+  // //   const req = {
+  // //     commandName: "fetchCommits",
+  // //     params: [],
+  // //   };
+  // //   const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
+  // //   t.ok(res);
+  // //   t.ok(res.data);
+  // //   t.equal(res.status, 200);
+  // //   console.log(res.data.transactionReceipt);
+  // // }
+
   t.end();
 });
 

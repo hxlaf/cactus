@@ -52,7 +52,8 @@
           "revokePermission",
           "addPeer",
           "removePeer",
-          "setSettingValue"
+          "setSettingValue",
+          "callEngine"
         ],
         "x-enum-descriptions": [
           "Make entity in the system, capable of sending transactions or queries, storing signatories, personal data and identifiers.",
@@ -73,7 +74,8 @@
           "Revoke or dismiss given granted permission from another account in the network.",
           "Write into ledger the fact of peer addition into the peer network.",
           "Write into ledger the fact of peer removal from the network.",
-          "This command is not available for use, it was added for backward compatibility with Iroha."
+          "This command is not available for use, it was added for backward compatibility with Iroha.",
+          "This command is not availalbe for use because it is related to smart contract."
         ],
         "x-enum-varnames": [
           "CreateAccount",
@@ -94,7 +96,8 @@
           "RevokePermission",
           "AddPeer",
           "RemovePeer",
-          "SetSettingValue"
+          "SetSettingValue",
+          "CallEngine"
         ]
       },
       "IrohaQuery": {

@@ -93,8 +93,10 @@ export class RunTransactionEndpoint implements IWebServiceEndpoint {
       res.json(resBody);
     } catch (ex) {
       if (ex instanceof Http405NotAllowedError) {
+        this.log.debug("Sending back http405 not allowed error.");
         res.status(405);
         res.json(ex);
+        return;
       }
       this.log.error(`Crash while serving ${reqTag}`, ex);
       res.status(500).json({

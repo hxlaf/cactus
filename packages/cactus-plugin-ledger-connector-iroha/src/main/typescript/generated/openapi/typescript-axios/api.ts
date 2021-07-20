@@ -200,7 +200,11 @@ export enum IrohaCommand {
     /**
     * This command is not available for use, it was added for backward compatibility with Iroha.
     */
-    SetSettingValue = 'setSettingValue'
+    SetSettingValue = 'setSettingValue',
+    /**
+    * This command is not availalbe for use because it is related to smart contract.
+    */
+    CallEngine = 'callEngine'
 }
 
 /**

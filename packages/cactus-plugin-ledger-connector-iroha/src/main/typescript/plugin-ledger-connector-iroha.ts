@@ -238,6 +238,13 @@ export class PluginLedgerConnectorIroha
       commandService: commandService,
       timeoutLimit: 5000,
     };
+    const commandOptions2 = {
+      privateKeys: [adminPriv],
+      creatorAccountId: "admin@test",
+      quorum: 2,
+      commandService: commandService,
+      timeoutLimit: 5000,
+    };
     const queryOptions = {
       privateKey: adminPriv,
       creatorAccountId: "admin@test",
@@ -578,6 +585,19 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
+      case IrohaCommand.CallEngine: {
+        try {
+          const response = await commands.callEngine(commandOptions, {
+            type: req.params[0],
+            caller: req.params[1],
+            callee: req.params[2],
+            input: req.params[3],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
       case IrohaQuery.GetEngineReceipts: {
         try {
           const response = await queries.getEngineReceipts(queryOptions, {
@@ -596,9 +616,42 @@ export class PluginLedgerConnectorIroha
           throw new Error(err);
         }
       }
+      case IrohaCommand.AddPeer: {
+        try {
+          const response = await commands.addPeer(commandOptions, {
+            address: req.params[0],
+            peerKey: req.params[1],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case IrohaCommand.RemovePeer: {
+        try {
+          const response = await commands.removePeer(commandOptions, {
+            publicKey: req.params[0],
+          });
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
       case IrohaQuery.GetPeers: {
         try {
           const response = await queries.getPeers(queryOptions);
+          return { transactionReceipt: response };
+        } catch (err) {
+          throw new Error(err);
+        }
+      }
+      case "producePendingTx": {
+        try {
+          const response = await commands.createAsset(commandOptions2, {
+            assetName: "coinb",
+            domainId: "test",
+            precision: 3,
+          });
           return { transactionReceipt: response };
         } catch (err) {
           throw new Error(err);
