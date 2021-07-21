@@ -92,8 +92,19 @@ export class RunTransactionEndpoint implements IWebServiceEndpoint {
       const resBody = await this.options.connector.transact(reqBody);
       res.json(resBody);
     } catch (ex) {
+      console.log(ex);
+      console.log(typeof ex);
+      if (
+        ex ===
+        "Error: Error: Command response error: expected=COMMITTED, actual=REJECTED"
+      ) {
+        this.log.debug("Sending back HTTP400 Bad Request error.");
+        res.status(400);
+        res.json(ex);
+        return;
+      }
       if (ex instanceof Http405NotAllowedError) {
-        this.log.debug("Sending back http405 not allowed error.");
+        this.log.debug("Sending back HTTP405 Method Not Allowed error.");
         res.status(405);
         res.json(ex);
         return;

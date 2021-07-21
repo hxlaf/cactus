@@ -150,7 +150,7 @@ export class IrohaTestLedger implements ITestLedger {
     docker.createVolume(ccacheVolume);
     this.log.debug(`Pulling container image ${imageFqn} ...`);
     await this.pullContainerImage(imageFqn);
-    this.log.warn(`Pulled ${imageFqn} OK. Starting container...`);
+    this.log.debug(`Pulled ${imageFqn} OK. Starting container...`);
 
     return new Promise<Container>((resolve, reject) => {
       const eventEmitter: EventEmitter = docker.run(
