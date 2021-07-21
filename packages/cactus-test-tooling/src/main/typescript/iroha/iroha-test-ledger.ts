@@ -178,7 +178,7 @@ export class IrohaTestLedger implements ITestLedger {
                 },
               ],
             },
-            AutoRemove: true,
+            //AutoRemove: true,
             NetworkMode: "iroha-network",
             Binds: [
               //`/home/han/workspace/cactus_dev/packages/cactus-test-tooling/src/main/typescript/iroha/example:/opt/iroha_data`,
@@ -268,18 +268,6 @@ export class IrohaTestLedger implements ITestLedger {
   public destroy(): Promise<any> {
     //remove volume
     const fnTag = "IrohaTestLedger#destroy()";
-    const docker = new Docker();
-    try {
-      docker.pruneVolumes(); //remove blockstore volume
-    } catch (ex) {
-      this.log.warn(`Failed to prune docker volume: `, ex);
-    }
-    //remove network
-    try {
-      docker.pruneNetworks(); //remove "iroha-network"
-    } catch (ex) {
-      this.log.warn(`Failed to prune docker network: `, ex);
-    }
     //remove container
     if (this.container) {
       return this.container.remove();

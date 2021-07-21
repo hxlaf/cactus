@@ -86,9 +86,9 @@ test(testCase, async (t: Test) => {
   await iroha.start();
   test.onFinish(async () => {
     await iroha.stop();
-    //await iroha.destroy();
+    await iroha.destroy();
     await postgres.stop();
-    //await postgres.destroy();
+    await postgres.destroy();
   });
 
   const rpcToriiPortHost = await iroha.getRpcToriiPortHost();

@@ -185,7 +185,7 @@ export class PostgresTestContainer implements ITestLedger {
                 },
               ],
             },
-            AutoRemove: true,
+            //AutoRemove: true,
             NetworkMode: "iroha-network",
           },
           // NetworkingConfig: {
@@ -259,6 +259,11 @@ export class PostgresTestContainer implements ITestLedger {
       docker.pruneNetworks(); //remove "iroha-network"
     } catch (ex) {
       this.log.warn(`Failed to prune docker network: `, ex);
+    }
+    try {
+      docker.pruneVolumes(); //remove blockstore volume
+    } catch (ex) {
+      this.log.warn(`Failed to prune docker volume: `, ex);
     }
     if (this.container) {
       return this.container.remove();
