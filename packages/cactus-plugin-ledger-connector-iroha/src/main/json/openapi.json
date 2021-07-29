@@ -332,7 +332,7 @@
             "501": {
               "description": "Not implemented",
               "content": {
-                "text/plain": {
+                "application/json": {
                   "schema": {
                     "type": "object",
                     "properties": {
