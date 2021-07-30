@@ -704,21 +704,7 @@ test(testCase, async (t: Test) => {
     t.equal(res.data.transactionReceipt.status, "COMMITTED");
   }
 
-  // use bluebird to cancel Promise
-  // {
-  //   const req1 = {
-  //     commandName: "producePendingTx",
-  //     params: [],
-  //   };
-  //   const promise = apiClient.runTransactionV1(req1 as RunTransactionRequest);
-  //   const p2 = new Promise((onCancel) => {
-  //     promise;
-  //     onCancel(() => console.log("p2 canceled"));
-  //   });
-  //   p2.cancel();
-  // }
-
-  //Use Promise.race to cancel the promise
+  // //  Use Promise.race to cancel the promise
   // {
   //   const req1 = {
   //     commandName: "producePendingTx",
@@ -751,6 +737,20 @@ test(testCase, async (t: Test) => {
   //     res.data.transactionReceipt[0].signaturesList[0].publicKey,
   //     "313a07e6384776ed95447710d15e59148473ccfc052a681317a72a69f2a49910",
   //   );
+  // }
+
+  // use bluebird to cancel Promise
+  // {
+  //   const req1 = {
+  //     commandName: "producePendingTx",
+  //     params: [],
+  //   };
+  //   const promise = apiClient.runTransactionV1(req1 as RunTransactionRequest);
+  //   const p2 = new Promise((onCancel) => {
+  //     promise;
+  //     onCancel(() => console.log("p2 canceled"));
+  //   });
+  //   p2.cancel();
   // }
 
   // // {
