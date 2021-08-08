@@ -30,8 +30,8 @@ export interface IIrohaTestLedgerConstructorOptions {
  * Provides default options for Iroha container
  */
 export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
-  containerImageVersion: "1.2.0",
-  containerImageName: "hyperledger/iroha",
+  containerImageVersion: "2021-08-04--1183",
+  containerImageName: "ghcr.io/hyperledger/cactus-iroha-all-in-one",
   rpcToriiPort: 50051, //grpc
   envVars: [
     "IROHA_POSTGRES_HOST=postgres_1",
