@@ -52,7 +52,7 @@ export {
 
 export {
   IrohaTestLedger,
-  IIrohaTestLedgerConstructorOptions,
+  IIrohaTestLedgerOptions,
   IROHA_TEST_LEDGER_DEFAULT_OPTIONS,
   IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA,
 } from "./iroha/iroha-test-ledger";

@@ -1,4 +1,3 @@
-//import all packages
 import Docker, { Container, ContainerInfo } from "dockerode";
 import Joi from "joi";
 import tar from "tar-stream";
@@ -7,33 +6,32 @@ import {
   LogLevelDesc,
   Logger,
   LoggerProvider,
+  Bools,
 } from "@hyperledger/cactus-common";
 import { ITestLedger } from "../i-test-ledger";
 import { Streams } from "../common/streams";
-//import { Containers } from "../common/containers";
-//import { NumberLiteralType } from "typescript";
-//import { DefaultSerializer } from "v8";
-//import { DEFAULTS } from "ts-node";
+import { Containers } from "../common/containers";
 
 /*
  * Contains options for Postgres container
  */
 export interface IPostgresTestContainerConstructorOptions {
-  containerImageVersion?: string;
-  containerImageName?: string;
-  postgresPort?: number;
-  envVars?: string[];
-  logLevel?: LogLevelDesc;
+  readonly imageVersion?: string;
+  readonly imageName?: string;
+  readonly postgresPort?: number;
+  readonly envVars?: string[];
+  readonly logLevel?: LogLevelDesc;
+  readonly emitContainerLogs?: boolean;
 }
 
 /*
  * Provides default options for Postgres container
  */
 export const POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS = Object.freeze({
-  containerImageVersion: "9.5-alpine",
-  containerImageName: "postgres",
+  imageVersion: "9.5-alpine",
+  imageName: "postgres",
   postgresPort: 5432,
-  envVars: ["POSTGRES_USER=postgres", "POSTGRES_PASSWORD=mysecretpassword"],
+  envVars: ["POSTGRES_USER=postgres", "POSTGRES_PASSWORD=my-secret-password"],
 });
 
 /*
@@ -41,18 +39,19 @@ export const POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS = Object.freeze({
  */
 export const POSTGRES_TEST_CONTAINER_OPTIONS_JOI_SCHEMA: Joi.Schema = Joi.object().keys(
   {
-    containerImageVersion: Joi.string().min(5).required(),
-    containerImageName: Joi.string().min(1).required(),
+    imageVersion: Joi.string().min(5).required(),
+    imageName: Joi.string().min(1).required(),
     postgresPort: Joi.number().min(1024).max(65535).required(),
     envVars: Joi.array().allow(null).required(),
   },
 );
 
 export class PostgresTestContainer implements ITestLedger {
-  public readonly containerImageVersion: string;
-  public readonly containerImageName: string;
+  public readonly imageVersion: string;
+  public readonly imageName: string;
   public readonly postgresPort: number;
   public readonly envVars: string[];
+  public readonly emitContainerLogs: boolean;
 
   private readonly log: Logger;
   private container: Container | undefined;
@@ -64,17 +63,20 @@ export class PostgresTestContainer implements ITestLedger {
     if (!options) {
       throw new TypeError(`PostgresTestContainer#ctor options was falsy.`);
     }
-    this.containerImageVersion =
-      options.containerImageVersion ||
-      POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.containerImageVersion;
-    this.containerImageName =
-      options.containerImageName ||
-      POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.containerImageName;
+    this.imageVersion =
+      options.imageVersion ||
+      POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.imageVersion;
+    this.imageName =
+      options.imageName || POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.imageName;
     this.postgresPort =
       options.postgresPort ||
       POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.postgresPort;
     this.envVars =
       options.envVars || POSTGRES_TEST_CONTAINER_DEFAULT_OPTIONS.envVars;
+
+    this.emitContainerLogs = Bools.isBooleanStrict(options.emitContainerLogs)
+      ? (options.emitContainerLogs as boolean)
+      : true;
 
     this.validateConstructorOptions();
     const label = "postgres-test-container";
@@ -91,8 +93,8 @@ export class PostgresTestContainer implements ITestLedger {
     }
   }
 
-  public getContainerImageName(): string {
-    return `${this.containerImageName}:${this.containerImageVersion}`;
+  public getimageName(): string {
+    return `${this.imageName}:${this.imageVersion}`;
   }
 
   public async getPostgresPortHost(): Promise<string> {
@@ -128,31 +130,13 @@ export class PostgresTestContainer implements ITestLedger {
   }
 
   public async start(): Promise<Container> {
-    const imageFqn = this.getContainerImageName();
+    const imageFqn = this.getimageName();
 
     if (this.container) {
       await this.container.stop();
       await this.container.remove();
     }
     const docker = new Docker();
-    this.log.debug(`Creating Iroha network ...`);
-    try {
-      docker.createNetwork({
-        Name: "iroha-network",
-        Driver: "bridge",
-        // IPAM: {
-        //   Config: [
-        //     {
-        //       Subnet: "172.20.0.0/16",
-        //       IPRange: "172.20.10.0/24",
-        //       Gateway: "172.20.10.12",
-        //     },
-        //   ],
-        // },
-      });
-    } catch (err) {
-      throw new Error(err);
-    }
 
     this.log.debug(`Pulling container image ${imageFqn} ...`);
     await this.pullContainerImage(imageFqn);
@@ -164,11 +148,6 @@ export class PostgresTestContainer implements ITestLedger {
         [],
         [],
         {
-          name: "some-postgres",
-          ExposedPorts: {
-            [`${this.postgresPort}/tcp`]: {}, // postgres Port - HTTP
-          },
-          PublishAllPorts: true,
           Env: this.envVars,
           Healthcheck: {
             Test: ["CMD-SHELL", "pg_isready -U postgres"],
@@ -178,19 +157,9 @@ export class PostgresTestContainer implements ITestLedger {
             StartPeriod: 3000000000, // 1 second
           },
           HostConfig: {
-            PortBindings: {
-              "5432/tcp": [
-                {
-                  HostPort: "5432",
-                },
-              ],
-            },
-            //AutoRemove: true,
-            NetworkMode: "iroha-network",
+            PublishAllPorts: true,
+            AutoRemove: true,
           },
-          // NetworkingConfig: {
-          //   EndpointsConfig: "iroha-network",
-          // },
         },
         {},
         (err: unknown) => {
@@ -204,6 +173,13 @@ export class PostgresTestContainer implements ITestLedger {
         this.log.debug(`Started container OK. Waiting for healthcheck...`);
         this.container = container;
         this.containerId = container.id;
+        if (this.emitContainerLogs) {
+          const logOptions = { follow: true, stderr: true, stdout: true };
+          const logStream = await container.logs(logOptions);
+          logStream.on("data", (data: Buffer) => {
+            this.log.debug(`[${imageFqn}] %o`, data.toString("utf-8"));
+          });
+        }
         try {
           await this.waitForHealthCheck();
           this.log.debug(`Healthcheck passing OK.`);
@@ -234,37 +210,12 @@ export class PostgresTestContainer implements ITestLedger {
     } while (!isHealthy);
   }
 
-  public stop(): Promise<any> {
-    const fnTag = "PostgresTestContainer#stop()";
-    return new Promise((resolve, reject) => {
-      if (this.container) {
-        this.container.stop({}, (err: any, result: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        });
-      } else {
-        return reject(new Error(`${fnTag} Container was not running.`));
-      }
-    });
-    //return Containers.stop(this.getContainer());
+  public stop(): Promise<unknown> {
+    return Containers.stop(this.container as Container);
   }
 
-  public destroy(): Promise<any> {
+  public destroy(): Promise<unknown> {
     const fnTag = "PostgresTestContainer#destroy()";
-    const docker = new Docker();
-    try {
-      docker.pruneNetworks(); //remove "iroha-network"
-    } catch (ex) {
-      this.log.warn(`Failed to prune docker network: `, ex);
-    }
-    try {
-      docker.pruneVolumes(); //remove blockstore volume
-    } catch (ex) {
-      this.log.warn(`Failed to prune docker volume: `, ex);
-    }
     if (this.container) {
       return this.container.remove();
     } else {
@@ -275,7 +226,7 @@ export class PostgresTestContainer implements ITestLedger {
 
   protected async getContainerInfo(): Promise<ContainerInfo> {
     const docker = new Docker();
-    const image = this.getContainerImageName();
+    const image = this.getimageName();
     const containerInfos = await docker.listContainers({});
 
     let aContainerInfo;
@@ -330,7 +281,7 @@ export class PostgresTestContainer implements ITestLedger {
         return NetworkSettings.Networks[networkNames[0]].IPAddress;
       }
     } else {
-      throw new Error(`${fnTag} cannot find image: ${this.containerImageName}`);
+      throw new Error(`${fnTag} cannot find image: ${this.imageName}`);
     }
   }
 
@@ -361,8 +312,8 @@ export class PostgresTestContainer implements ITestLedger {
       IPostgresTestContainerConstructorOptions
     >(
       {
-        containerImageVersion: this.containerImageVersion,
-        containerImageName: this.containerImageName,
+        imageVersion: this.imageVersion,
+        imageName: this.imageName,
         postgresPort: this.postgresPort,
         envVars: this.envVars,
       },

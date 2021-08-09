@@ -1,43 +1,41 @@
-//import all packages
 import Docker, { Container, ContainerInfo } from "dockerode";
 import Joi from "joi";
-import tar from "tar-stream";
 import { EventEmitter } from "events";
 import {
   LogLevelDesc,
   Logger,
   LoggerProvider,
+  Bools,
+  Checks,
 } from "@hyperledger/cactus-common";
 import { ITestLedger } from "../i-test-ledger";
-import { Streams } from "../common/streams";
-//import { Containers } from "../common/containers";
-//import { NumberLiteralType } from "typescript";
-//import { DefaultSerializer } from "v8";
-//import { DEFAULTS } from "ts-node";
+import { IKeyPair } from "../i-key-pair";
+import { Containers } from "../common/containers";
 
 /*
  * Contains options for Iroha container
  */
-export interface IIrohaTestLedgerConstructorOptions {
-  containerImageVersion?: string;
-  containerImageName?: string;
-  rpcToriiPort?: number;
-  envVars?: string[];
-  logLevel?: LogLevelDesc;
+export interface IIrohaTestLedgerOptions {
+  readonly postgresHost: string;
+  readonly postgresPort: number;
+  readonly imageVersion?: string;
+  readonly imageName?: string;
+  readonly rpcToriiPort?: number;
+  readonly envVars?: string[];
+  readonly logLevel?: LogLevelDesc;
+  readonly emitContainerLogs?: boolean;
 }
 
 /*
  * Provides default options for Iroha container
  */
 export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
-  containerImageVersion: "2021-08-04--1183",
-  containerImageName: "ghcr.io/hyperledger/cactus-iroha-all-in-one",
-  rpcToriiPort: 50051, //grpc
+  imageVersion: "2021-08-04--1183",
+  imageName: "ghcr.io/hyperledger/cactus-iroha-all-in-one",
+  rpcToriiPort: 50051,
   envVars: [
-    "IROHA_POSTGRES_HOST=postgres_1",
-    "IROHA_POSTGRES_PORT=5432",
     "IROHA_POSTGRES_USER=postgres",
-    "IROHA_POSTGRES_PASSWORD=mysecretpassword",
+    "IROHA_POSTGRES_PASSWORD=my-secret-password",
     "KEY=node0",
   ],
 });
@@ -49,38 +47,55 @@ export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
  */
 export const IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA: Joi.Schema = Joi.object().keys(
   {
-    containerImageVersion: Joi.string().min(5).required(),
-    containerImageName: Joi.string().min(1).required(),
+    postgresPort: Joi.number().port().required(),
+    postgresHost: Joi.string().hostname().required(),
+    imageVersion: Joi.string().min(5).required(),
+    imageName: Joi.string().min(1).required(),
     rpcToriiPort: Joi.number().min(1024).max(65535).required(),
     envVars: Joi.array().allow(null).required(),
   },
 );
 
 export class IrohaTestLedger implements ITestLedger {
-  public readonly containerImageVersion: string;
-  public readonly containerImageName: string;
+  public readonly imageVersion: string;
+  public readonly imageName: string;
   public readonly rpcToriiPort: number;
   public readonly envVars: string[];
+  public readonly emitContainerLogs: boolean;
+  public readonly postgresHost: string;
+  public readonly postgresPort: number;
 
   private readonly log: Logger;
   private container: Container | undefined;
   private containerId: string | undefined;
 
-  constructor(
-    public readonly options: IIrohaTestLedgerConstructorOptions = {},
-  ) {
+  constructor(public readonly options: IIrohaTestLedgerOptions) {
+    const fnTag = `IrohaTestLedger#constructor()`;
     if (!options) {
       throw new TypeError(`IrohaTestLedger#ctor options was falsy.`);
     }
-    this.containerImageVersion =
-      options.containerImageVersion ||
-      IROHA_TEST_LEDGER_DEFAULT_OPTIONS.containerImageVersion;
-    this.containerImageName =
-      options.containerImageName ||
-      IROHA_TEST_LEDGER_DEFAULT_OPTIONS.containerImageName;
+    Checks.nonBlankString(options.postgresHost, `${fnTag} postgresHost`);
+    Checks.truthy(options.postgresPort, `${fnTag} postgresPort`);
+
+    this.postgresHost = options.postgresHost;
+    this.postgresPort = options.postgresPort;
+
+    this.imageVersion =
+      options.imageVersion || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.imageVersion;
+    this.imageName =
+      options.imageName || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.imageName;
     this.rpcToriiPort =
       options.rpcToriiPort || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.rpcToriiPort;
-    this.envVars = options.envVars || IROHA_TEST_LEDGER_DEFAULT_OPTIONS.envVars;
+    this.envVars = options.envVars || [
+      ...IROHA_TEST_LEDGER_DEFAULT_OPTIONS.envVars,
+    ];
+
+    this.envVars.push(`IROHA_POSTGRES_HOST=${this.postgresHost}`);
+    this.envVars.push(`IROHA_POSTGRES_PORT=${this.postgresPort}`);
+
+    this.emitContainerLogs = Bools.isBooleanStrict(options.emitContainerLogs)
+      ? (options.emitContainerLogs as boolean)
+      : true;
 
     this.validateConstructorOptions();
     const label = "iroha-test-ledger";
@@ -97,40 +112,14 @@ export class IrohaTestLedger implements ITestLedger {
     }
   }
 
-  public getContainerImageName(): string {
-    return `${this.containerImageName}:${this.containerImageVersion}`;
+  public get imageFqn(): string {
+    return `${this.imageName}:${this.imageVersion}`;
   }
 
   public async getRpcToriiPortHost(): Promise<string> {
     const ipAddress = "127.0.0.1";
     const hostPort: number = await this.getRpcToriiPort();
     return `http://${ipAddress}:${hostPort}`;
-  }
-
-  public async getFileContents(filePath: string): Promise<string> {
-    const response: any = await this.getContainer().getArchive({
-      path: filePath,
-    });
-    const extract: tar.Extract = tar.extract({ autoDestroy: true });
-
-    return new Promise((resolve, reject) => {
-      let fileContents = "";
-      extract.on("entry", async (header: any, stream, next) => {
-        stream.on("error", (err: Error) => {
-          reject(err);
-        });
-        const chunks: string[] = await Streams.aggregate<string>(stream);
-        fileContents += chunks.join("");
-        stream.resume();
-        next();
-      });
-
-      extract.on("finish", () => {
-        resolve(fileContents);
-      });
-
-      response.pipe(extract);
-    });
   }
 
   /**
@@ -161,35 +150,43 @@ export class IrohaTestLedger implements ITestLedger {
     return "f101537e319568c765b2cc89698325604991dca57b9716b58016b253506cab70";
   }
 
-  public async start(): Promise<Container> {
-    const imageFqn = this.getContainerImageName();
+  public async getNodeKeyPair(): Promise<IKeyPair> {
+    const fnTag = `IrohaTestLedger#getNodeKeyPair()`;
+    if (!this.container) {
+      throw new Error(`${fnTag} this.container cannot be falsy.`);
+    }
+    const publicKey = await Containers.pullFile(
+      this.container,
+      "/opt/iroha_data/node0.pub",
+    );
+    const privateKey = await Containers.pullFile(
+      this.container,
+      "/opt/iroha_data/node0.priv",
+    );
+    return { publicKey, privateKey };
+  }
 
+  public async start(omitPull = false): Promise<Container> {
     if (this.container) {
       await this.container.stop();
       await this.container.remove();
     }
     const docker = new Docker();
-    this.log.debug(`Creating Iroha volume blockstore...`);
-    const ccacheVolume = {
-      Name: "blockstore",
-      Driver: "local",
-      Mountpoint: "/var/lib/docker/volumes/blockstore",
-    };
-    docker.createVolume(ccacheVolume);
-    this.log.debug(`Pulling container image ${imageFqn} ...`);
-    await this.pullContainerImage(imageFqn);
-    this.log.debug(`Pulled ${imageFqn} OK. Starting container...`);
+    if (!omitPull) {
+      this.log.debug(`Pulling container image ${this.imageFqn} ...`);
+      await Containers.pullImage(this.imageFqn);
+      this.log.debug(`Pulled ${this.imageFqn} OK. Starting container...`);
+    }
 
     return new Promise<Container>((resolve, reject) => {
       const eventEmitter: EventEmitter = docker.run(
-        imageFqn,
+        this.imageFqn,
         [],
         [],
         {
           ExposedPorts: {
             [`${this.rpcToriiPort}/tcp`]: {}, // Iroha RPC - Torii
           },
-          PublishAllPorts: true,
           Env: this.envVars,
           Healthcheck: {
             Test: ["CMD-SHELL", "netcat -zv 127.0.0.1 50051 || exit 1"],
@@ -199,6 +196,8 @@ export class IrohaTestLedger implements ITestLedger {
             StartPeriod: 3000000000, // 1 second
           },
           HostConfig: {
+            PublishAllPorts: true,
+            AutoRemove: true,
             PortBindings: {
               "50051/tcp": [
                 {
@@ -206,13 +205,6 @@ export class IrohaTestLedger implements ITestLedger {
                 },
               ],
             },
-            //AutoRemove: true,
-            NetworkMode: "iroha-network",
-            Binds: [
-              //`/home/han/workspace/cactus_dev/packages/cactus-test-tooling/src/main/typescript/iroha/example:/opt/iroha_data`,
-              //              `$(pwd)/example:/opt/iroha_data`,
-              `blockstore:/tmp/block_store`,
-            ],
           },
         },
         {},
@@ -227,6 +219,13 @@ export class IrohaTestLedger implements ITestLedger {
         this.log.debug(`Started container OK. Waiting for healthcheck...`);
         this.container = container;
         this.containerId = container.id;
+        if (this.emitContainerLogs) {
+          const logOptions = { follow: true, stderr: true, stdout: true };
+          const logStream = await container.logs(logOptions);
+          logStream.on("data", (data: Buffer) => {
+            this.log.debug(`[${this.imageFqn}] %o`, data.toString("utf-8"));
+          });
+        }
         try {
           await this.waitForHealthCheck();
           this.log.debug(`Healthcheck passing OK.`);
@@ -256,44 +255,11 @@ export class IrohaTestLedger implements ITestLedger {
     } while (!isHealthy);
   }
 
-  // public async waitForHealthCheck(timeoutMs = 120000): Promise<void> {
-  //   const fnTag = "IrohaTestLedger#waitForHealthCheck()";
-  //   const httpUrl = await this.getRpcToriiPortHost();
-  //   const startedAt = Date.now();
-  //   let reachable = false;
-  //   do {
-  //     try {
-  //       const res = await axios.get(httpUrl);
-  //       reachable = res.status > 199 && res.status < 300;
-  //     } catch (ex) {
-  //       reachable = false;
-  //       if (Date.now() >= startedAt + timeoutMs) {
-  //         throw new Error(`${fnTag} timed out (${timeoutMs}ms) -> ${ex.stack}`);
-  //       }
-  //     }
-  //     await new Promise((resolve2) => setTimeout(resolve2, 100));
-  //   } while (!reachable);
-  // }
-
-  public stop(): Promise<any> {
-    const fnTag = "IrohaTestLedger#stop()";
-    return new Promise((resolve, reject) => {
-      if (this.container) {
-        this.container.stop({}, (err: any, result: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(result);
-          }
-        });
-      } else {
-        return reject(new Error(`${fnTag} Container was not running.`));
-      }
-    });
-    //return Containers.stop(this.getContainer());
+  public stop(): Promise<unknown> {
+    return Containers.stop(this.container as Container);
   }
 
-  public destroy(): Promise<any> {
+  public destroy(): Promise<unknown> {
     //remove volume
     const fnTag = "IrohaTestLedger#destroy()";
     //remove container
@@ -307,7 +273,7 @@ export class IrohaTestLedger implements ITestLedger {
 
   protected async getContainerInfo(): Promise<ContainerInfo> {
     const docker = new Docker();
-    const image = this.getContainerImageName();
+    const image = this.imageFqn;
     const containerInfos = await docker.listContainers({});
 
     let aContainerInfo;
@@ -360,37 +326,17 @@ export class IrohaTestLedger implements ITestLedger {
         return NetworkSettings.Networks[networkNames[0]].IPAddress;
       }
     } else {
-      throw new Error(`${fnTag} cannot find image: ${this.containerImageName}`);
+      throw new Error(`${fnTag} cannot find image: ${this.imageName}`);
     }
   }
 
-  private pullContainerImage(containerNameAndTag: string): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      const docker = new Docker();
-      docker.pull(containerNameAndTag, (pullError: any, stream: any) => {
-        if (pullError) {
-          reject(pullError);
-        } else {
-          docker.modem.followProgress(
-            stream,
-            (progressError: any, output: any[]) => {
-              if (progressError) {
-                reject(progressError);
-              } else {
-                resolve(output);
-              }
-            },
-          );
-        }
-      });
-    });
-  }
-
   private validateConstructorOptions(): void {
-    const validationResult = Joi.validate<IIrohaTestLedgerConstructorOptions>(
+    const validationResult = Joi.validate<IIrohaTestLedgerOptions>(
       {
-        containerImageVersion: this.containerImageVersion,
-        containerImageName: this.containerImageName,
+        postgresHost: this.postgresHost,
+        postgresPort: this.postgresPort,
+        imageVersion: this.imageVersion,
+        imageName: this.imageName,
         rpcToriiPort: this.rpcToriiPort,
         envVars: this.envVars,
       },

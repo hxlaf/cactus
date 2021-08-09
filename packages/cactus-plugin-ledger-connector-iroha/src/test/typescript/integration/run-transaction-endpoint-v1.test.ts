@@ -2,6 +2,7 @@ import http from "http";
 import { AddressInfo } from "net";
 import test, { Test } from "tape-promise/tape";
 import { v4 as uuidv4 } from "uuid";
+import { v4 as internalIpV4 } from "internal-ip";
 import bodyParser from "body-parser";
 import express from "express";
 //import Promise from "bluebird";
@@ -31,8 +32,13 @@ import {
 
 import { Configuration } from "@hyperledger/cactus-core-api";
 
+import {
+  IrohaCommand,
+  IrohaQuery,
+} from "../../../main/typescript/generated/openapi/typescript-axios";
+
 const testCase = "runs tx on an Iroha v1.2.0 ledger";
-const logLevel: LogLevelDesc = "TRACE";
+const logLevel: LogLevelDesc = "INFO";
 
 test.onFailure(async () => {
   await Containers.logDiagnostics({ logLevel });
@@ -45,35 +51,28 @@ test("BEFORE " + testCase, async (t: Test) => {
 });
 
 test(testCase, async (t: Test) => {
-  const postgres = new PostgresTestContainer({
-    containerImageName: "postgres",
-    containerImageVersion: "9.5-alpine",
-    postgresPort: 5432,
-    envVars: ["POSTGRES_USER=postgres", "POSTGRES_PASSWORD=mysecretpassword"],
+  const postgres = new PostgresTestContainer({ logLevel });
+
+  test.onFinish(async () => {
+    await postgres.stop();
   });
 
+  await postgres.start();
+  const postgresPort = await postgres.getPostgresPort();
+  const postgresHost = await internalIpV4();
+  if (!postgresHost) {
+    throw new Error("Could not determine the internal IPV4 address.");
+  }
   const iroha = new IrohaTestLedger({
-    containerImageVersion: "1.20c",
-    containerImageName: "hanxyz/iroha",
-    rpcToriiPort: 50051,
-    //logLevel: "TRACE",
-    envVars: [
-      "IROHA_POSTGRES_HOST=postgres_1",
-      "IROHA_POSTGRES_PORT=5432",
-      "IROHA_POSTGRES_USER=postgres",
-      "IROHA_POSTGRES_PASSWORD=mysecretpassword",
-      "KEY=node0",
-    ],
+    postgresHost,
+    postgresPort,
+    logLevel,
   });
 
-  await postgres.start(); //start postgres first
-  await iroha.start();
   test.onFinish(async () => {
     await iroha.stop();
-    await iroha.destroy();
-    await postgres.stop();
-    await postgres.destroy();
   });
+  await iroha.start();
 
   const rpcToriiPortHost = await iroha.getRpcToriiPortHost();
   const factory = new PluginFactoryLedgerConnector({
@@ -106,9 +105,10 @@ test(testCase, async (t: Test) => {
   await connector.registerWebServices(expressApp);
 
   let firstTxHash;
+  const adminAccount = iroha.getGenesisAdminAccount();
   {
     const req = {
-      commandName: "createAccount",
+      commandName: IrohaCommand.CreateAccount,
       params: [
         "user1",
         "test",
@@ -124,8 +124,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getAccount",
-      params: ["admin@test"],
+      commandName: IrohaQuery.GetAccount,
+      params: [adminAccount],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -133,7 +133,7 @@ test(testCase, async (t: Test) => {
     t.equal(res.status, 200);
     console.log(res.data.transactionReceipt);
     t.deepEqual(res.data.transactionReceipt, {
-      accountId: "admin@test",
+      accountId: adminAccount,
       domainId: "test",
       quorum: 1,
       jsonData: "{}",
@@ -142,7 +142,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "createDomain",
+      commandName: IrohaCommand.CreateDomain,
       params: ["test2", "admin"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -154,7 +154,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "createAsset",
+      commandName: IrohaCommand.CreateAsset,
       params: ["coolcoin", "test", 3],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -166,7 +166,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getAssetInfo",
+      commandName: IrohaQuery.GetAssetInfo,
       params: ["coolcoin#test"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -182,7 +182,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "addAssetQuantity",
+      commandName: IrohaCommand.AddAssetQuantity,
       params: ["coolcoin#test", "123.123"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -194,8 +194,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "transferAsset",
-      params: ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
+      commandName: IrohaCommand.TransferAsset,
+      params: [adminAccount, "user1@test", "coolcoin#test", "testTx", "57.75"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -207,8 +207,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getAccountAssets",
-      params: ["admin@test", 100, "coolcoin#test"],
+      commandName: IrohaQuery.GetAccountAssets,
+      params: [adminAccount, 100, "coolcoin#test"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -217,7 +217,7 @@ test(testCase, async (t: Test) => {
     t.deepEqual(res.data.transactionReceipt, [
       {
         assetId: "coolcoin#test",
-        accountId: "admin@test",
+        accountId: adminAccount,
         balance: "65.373",
       },
     ]);
@@ -225,7 +225,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getAccountAssets",
+      commandName: IrohaQuery.GetAccountAssets,
       params: ["user1@test", 100, "coolcoin#test"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -244,7 +244,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "subtractAssetQuantity",
+      commandName: IrohaCommand.SubtractAssetQuantity,
       params: ["coolcoin#test", "30.123"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -256,8 +256,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getAccountAssets",
-      params: ["admin@test", 100, "coolcoin#test"],
+      commandName: IrohaQuery.GetAccountAssets,
+      params: [adminAccount, 100, "coolcoin#test"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -266,7 +266,7 @@ test(testCase, async (t: Test) => {
     t.deepEqual(res.data.transactionReceipt, [
       {
         assetId: "coolcoin#test",
-        accountId: "admin@test",
+        accountId: adminAccount,
         balance: "35.250",
       },
     ]);
@@ -274,8 +274,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getSignatories",
-      params: ["admin@test"],
+      commandName: IrohaQuery.GetSignatories,
+      params: [adminAccount],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -288,9 +288,9 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "addSignatory",
+      commandName: IrohaCommand.AddSignatory,
       params: [
-        "admin@test",
+        adminAccount,
         "0000000000000000000000000000000000000000000000000000000000000001",
       ],
     };
@@ -303,8 +303,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getSignatories",
-      params: ["admin@test"],
+      commandName: IrohaQuery.GetSignatories,
+      params: [adminAccount],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -318,9 +318,9 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "removeSignatory",
+      commandName: IrohaCommand.RemoveSignatory,
       params: [
-        "admin@test",
+        adminAccount,
         "0000000000000000000000000000000000000000000000000000000000000001",
       ],
     };
@@ -333,8 +333,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getSignatories",
-      params: ["admin@test"],
+      commandName: IrohaQuery.GetSignatories,
+      params: [adminAccount],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -347,7 +347,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getRoles",
+      commandName: IrohaQuery.GetRoles,
       params: [],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -365,7 +365,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getRolePermissions",
+      commandName: IrohaQuery.GetRolePermissions,
       params: ["user"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -399,7 +399,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getTransactions",
+      commandName: IrohaQuery.GetTransactions,
       params: [[firstTxHash]],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -408,14 +408,14 @@ test(testCase, async (t: Test) => {
     t.equal(res.status, 200);
     t.deepEqual(
       res.data.transactionReceipt.array[0][0][0][0][0][0].slice(-1)[0],
-      ["admin@test", "user1@test", "coolcoin#test", "testTx", "57.75"],
+      [adminAccount, "user1@test", "coolcoin#test", "testTx", "57.75"],
     );
   }
 
   {
     const req = {
-      commandName: "getAccountTransactions",
-      params: ["admin@test", 100, firstTxHash],
+      commandName: IrohaQuery.GetAccountTransactions,
+      params: [adminAccount, 100, firstTxHash],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -427,7 +427,7 @@ test(testCase, async (t: Test) => {
       [
         {
           transferAsset: {
-            srcAccountId: "admin@test",
+            srcAccountId: adminAccount,
             destAccountId: "user1@test",
             assetId: "coolcoin#test",
             description: "testTx",
@@ -445,8 +445,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getAccountAssetTransactions",
-      params: ["admin@test", "coolcoin#test", 100, undefined],
+      commandName: IrohaQuery.GetAccountAssetTransactions,
+      params: [adminAccount, "coolcoin#test", 100, undefined],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.deepEqual(
@@ -455,7 +455,7 @@ test(testCase, async (t: Test) => {
       [
         {
           transferAsset: {
-            srcAccountId: "admin@test",
+            srcAccountId: adminAccount,
             destAccountId: "user1@test",
             assetId: "coolcoin#test",
             description: "testTx",
@@ -473,7 +473,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getPeers",
+      commandName: IrohaQuery.GetPeers,
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -491,7 +491,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getBlock",
+      commandName: IrohaQuery.GetBlock,
       params: [1],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -512,7 +512,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "appendRole",
+      commandName: IrohaCommand.AppendRole,
       params: ["user1@test", "money_creator"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -524,7 +524,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "detachRole",
+      commandName: IrohaCommand.DetachRole,
       params: ["user1@test", "money_creator"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -536,7 +536,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "createRole",
+      commandName: IrohaCommand.CreateRole,
       params: ["testrole", [6, 7]],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -548,7 +548,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "grantPermission",
+      commandName: IrohaCommand.GrantPermission,
       params: ["user1@test", "CAN_CALL_ENGINE_ON_MY_BEHALF"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -560,7 +560,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "revokePermission",
+      commandName: IrohaCommand.RevokePermission,
       params: ["user1@test", "CAN_CALL_ENGINE_ON_MY_BEHALF"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -572,7 +572,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "setAccountDetail",
+      commandName: IrohaCommand.SetAccountDetail,
       params: ["user1@test", "age", "18"],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -584,8 +584,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getAccountDetail",
-      params: ["user1@test", "age", "admin@test", 1, "age", "admin@test"],
+      commandName: IrohaQuery.GetAccountDetail,
+      params: ["user1@test", "age", adminAccount, 1, "age", adminAccount],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
@@ -598,7 +598,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "compareAndSetAccountDetail",
+      commandName: IrohaCommand.CompareAndSetAccountDetail,
       params: ["user1@test", "age", "118", "18"], //change age from 18 to 118
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -610,8 +610,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getAccountDetail",
-      params: ["user1@test", "age", "admin@test", 1, "age", "admin@test"],
+      commandName: IrohaQuery.GetAccountDetail,
+      params: ["user1@test", "age", adminAccount, 1, "age", adminAccount],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     console.log(res.data.transactionReceipt);
@@ -640,7 +640,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "getEngineReceipts",
+      commandName: IrohaQuery.GetEngineReceipts,
       params: [firstTxHash],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
@@ -649,7 +649,7 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "setSettingValue",
+      commandName: IrohaCommand.SetSettingValue,
       params: ["key", "value"],
     };
     await t.rejects(
@@ -661,10 +661,10 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "callEngine",
+      commandName: IrohaCommand.CallEngine,
       params: [
         undefined,
-        "admin@test",
+        adminAccount,
         "7C370993FD90AF204FD582004E2E54E6A94F2651",
         "40c10f19000000000000000000000000969453762b0c739dd285b31635efa00e24c2562800000000000000000000000000000000000000000000000000000000000004d2",
       ],
@@ -678,9 +678,9 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "addSignatory",
+      commandName: IrohaCommand.AddSignatory,
       params: [
-        "admin@test",
+        adminAccount,
         "716fe505f69f18511a1b083915aa9ff73ef36e6688199f3959750db38b8f4bfc",
       ],
     };
@@ -693,8 +693,8 @@ test(testCase, async (t: Test) => {
 
   {
     const req = {
-      commandName: "setAccountQuorum",
-      params: ["admin@test", 2],
+      commandName: IrohaCommand.SetAccountQuorum,
+      params: [adminAccount, 2],
     };
     const res = await apiClient.runTransactionV1(req as RunTransactionRequest);
     t.ok(res);
