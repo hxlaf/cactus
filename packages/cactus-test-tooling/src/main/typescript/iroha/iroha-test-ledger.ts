@@ -1,5 +1,6 @@
 import Docker, { Container, ContainerInfo } from "dockerode";
 import Joi from "joi";
+import { v4 as internalIpV4 } from "internal-ip";
 import { EventEmitter } from "events";
 import {
   LogLevelDesc,
@@ -16,6 +17,8 @@ import { Containers } from "../common/containers";
  * Contains options for Iroha container
  */
 export interface IIrohaTestLedgerOptions {
+  readonly irohaHost: string;
+  //readonly irohaPort: number;
   readonly postgresHost: string;
   readonly postgresPort: number;
   readonly imageVersion?: string;
@@ -47,8 +50,10 @@ export const IROHA_TEST_LEDGER_DEFAULT_OPTIONS = Object.freeze({
  */
 export const IROHA_TEST_LEDGER_OPTIONS_JOI_SCHEMA: Joi.Schema = Joi.object().keys(
   {
-    postgresPort: Joi.number().port().required(),
+    irohaHost: Joi.string().hostname().required(),
+    //irohaPort: Joi.number().port().required(),
     postgresHost: Joi.string().hostname().required(),
+    postgresPort: Joi.number().port().required(),
     imageVersion: Joi.string().min(5).required(),
     imageName: Joi.string().min(1).required(),
     rpcToriiPort: Joi.number().min(1024).max(65535).required(),
@@ -62,6 +67,8 @@ export class IrohaTestLedger implements ITestLedger {
   public readonly rpcToriiPort: number;
   public readonly envVars: string[];
   public readonly emitContainerLogs: boolean;
+  public readonly irohaHost: string;
+  //public readonly irohaPort: number;
   public readonly postgresHost: string;
   public readonly postgresPort: number;
 
@@ -74,9 +81,13 @@ export class IrohaTestLedger implements ITestLedger {
     if (!options) {
       throw new TypeError(`IrohaTestLedger#ctor options was falsy.`);
     }
+    Checks.nonBlankString(options.irohaHost, `${fnTag} irohaHost`);
+    //Checks.truthy(options.irohaPort, `${fnTag} irohaPort`);
     Checks.nonBlankString(options.postgresHost, `${fnTag} postgresHost`);
     Checks.truthy(options.postgresPort, `${fnTag} postgresPort`);
 
+    this.irohaHost = options.irohaHost;
+    //this.irohaPort = options.irohaPort;
     this.postgresHost = options.postgresHost;
     this.postgresPort = options.postgresPort;
 
@@ -117,7 +128,7 @@ export class IrohaTestLedger implements ITestLedger {
   }
 
   public async getRpcToriiPortHost(): Promise<string> {
-    const ipAddress = "127.0.0.1";
+    const ipAddress = await internalIpV4();
     const hostPort: number = await this.getRpcToriiPort();
     return `http://${ipAddress}:${hostPort}`;
   }
@@ -198,13 +209,13 @@ export class IrohaTestLedger implements ITestLedger {
           HostConfig: {
             PublishAllPorts: true,
             AutoRemove: true,
-            PortBindings: {
-              "50051/tcp": [
-                {
-                  HostPort: "50051",
-                },
-              ],
-            },
+            // PortBindings: {
+            //   "50051/tcp": [
+            //     {
+            //       HostPort: "50051",
+            //     },
+            //   ],
+            // },
           },
         },
         {},
@@ -333,6 +344,8 @@ export class IrohaTestLedger implements ITestLedger {
   private validateConstructorOptions(): void {
     const validationResult = Joi.validate<IIrohaTestLedgerOptions>(
       {
+        irohaHost: this.irohaHost,
+        //irohaPort: this.irohaPort,
         postgresHost: this.postgresHost,
         postgresPort: this.postgresPort,
         imageVersion: this.imageVersion,

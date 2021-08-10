@@ -122,6 +122,51 @@ export interface InvokeContractV1Request {
 /**
  * 
  * @export
+ * @interface IrohaBaseConfig
+ */
+export interface IrohaBaseConfig {
+    [key: string]: object | any;
+
+    /**
+     * 
+     * @type {string}
+     * @memberof IrohaBaseConfig
+     */
+    irohaHost?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof IrohaBaseConfig
+     */
+    irohaPort?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof IrohaBaseConfig
+     */
+    creatorAccountId?: string;
+    /**
+     * 
+     * @type {Array<any>}
+     * @memberof IrohaBaseConfig
+     */
+    privKey?: Array<any>;
+    /**
+     * 
+     * @type {number}
+     * @memberof IrohaBaseConfig
+     */
+    quorum?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof IrohaBaseConfig
+     */
+    timeoutLimit?: number;
+}
+/**
+ * 
+ * @export
  * @enum {string}
  */
 export enum IrohaCommand {
@@ -287,6 +332,12 @@ export interface RunTransactionRequest {
      * @memberof RunTransactionRequest
      */
     commandName: string;
+    /**
+     * 
+     * @type {IrohaBaseConfig}
+     * @memberof RunTransactionRequest
+     */
+    baseConfig?: IrohaBaseConfig;
     /**
      * The list of arguments to pass in to the trasnsaction request.
      * @type {Array<any>}

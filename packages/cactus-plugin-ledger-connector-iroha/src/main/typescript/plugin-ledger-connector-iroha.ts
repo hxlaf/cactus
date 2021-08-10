@@ -221,22 +221,38 @@ export class PluginLedgerConnectorIroha
   public async transact(
     req: RunTransactionRequest, //string + array<any>
   ): Promise<RunTransactionResponse> {
+    const { commandName, baseConfig } = req;
+    if (
+      !baseConfig ||
+      !baseConfig.privKey ||
+      !baseConfig.creatorAccountId ||
+      !baseConfig.irohaHost ||
+      !baseConfig.irohaPort ||
+      !baseConfig.quorum ||
+      !baseConfig.timeoutLimit
+    ) {
+      console.error("No data here!");
+      return { transactionReceipt: "Some fields in baseConfig is undefined" };
+    }
+    console.log(baseConfig);
+    const irohaHostPort = `${baseConfig.irohaHost}:${baseConfig.irohaPort}`;
     const adminPriv =
       "f101537e319568c765b2cc89698325604991dca57b9716b58016b253506cab70";
+
     const commandService = new CommandService(
-      "localhost:50051",
+      irohaHostPort, //"localhost:50051"
       grpc.credentials.createInsecure(),
     );
     const queryService = new QueryService(
-      "localhost:50051",
+      irohaHostPort,
       grpc.credentials.createInsecure(),
     );
     const commandOptions = {
-      privateKeys: [adminPriv],
-      creatorAccountId: "admin@test",
-      quorum: 1,
+      privateKeys: baseConfig.privKey,
+      creatorAccountId: baseConfig.creatorAccountId,
+      quorum: baseConfig.quorum,
       commandService: commandService,
-      timeoutLimit: 5000,
+      timeoutLimit: baseConfig.timeoutLimit,
     };
     const commandOptions2 = {
       privateKeys: [adminPriv],
@@ -246,14 +262,14 @@ export class PluginLedgerConnectorIroha
       timeoutLimit: 5000,
     };
     const queryOptions = {
-      privateKey: adminPriv,
-      creatorAccountId: "admin@test",
+      privateKey: baseConfig.privKey[0],
+      creatorAccountId: baseConfig.creatorAccountId as string,
       queryService: queryService,
-      timeoutLimit: 5000,
+      timeoutLimit: baseConfig.timeoutLimit,
     };
     console.log(req);
 
-    switch (req.commandName) {
+    switch (commandName) {
       case IrohaCommand.CreateAccount: {
         try {
           const response = await commands.createAccount(commandOptions, {
